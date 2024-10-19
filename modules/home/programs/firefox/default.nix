@@ -58,7 +58,7 @@ in
     };
     programs.firefox = {
       enable = true;
-      inherit package;
+      inherit (cfg) package;
       policies = {
         # Documentation: https://mozilla.github.io/policy-templates/
 
@@ -126,7 +126,7 @@ in
         "3rdparty".Extensions = {
           # https://github.com/gorhill/uBlock/blob/master/platform/common/managed_storage.json
           "uBlock0@raymondhill.net".adminSettings = {
-            userSettings = rec {
+            userSettings = {
               uiTheme = "dark";
               uiAccentCustom = true;
               uiAccentCustom0 = "#b4befe";
