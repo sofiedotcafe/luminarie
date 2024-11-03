@@ -6,16 +6,13 @@
   };
 
   modules.home = {
-    desktop.session.cosmic.enable = true;
+    desktop.session.gnome.enable = true;
 
     programs =
       lib.genAttrs
         [
           "firefox"
           "fractal"
-          "kitty"
-          "mpv"
-          "stardrop"
           "vscode"
         ]
         (_k: {

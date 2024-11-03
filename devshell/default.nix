@@ -11,7 +11,6 @@
         settings.hooks = {
           nixfmt-rfc-style.enable = true;
           deadnix.enable = true;
-          prettier.enable = true;
           statix.enable = true;
           nil.enable = true;
         };

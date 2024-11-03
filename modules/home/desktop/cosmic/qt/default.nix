@@ -15,8 +15,8 @@ in
       platformTheme = "qtct";
       style = {
         package = pkgs.catppuccin-kvantum.override {
-          accent = "Lavender";
-          variant = "Mocha";
+          accent = "lavender";
+          variant = "mocha";
         };
         name = "kvantum";
       };
@@ -29,6 +29,6 @@ in
 
     xdg.configFile."Kvantum/kvantum.kvconfig".source =
       (pkgs.formats.ini { }).generate "kvantum.kvconfig"
-        { General.theme = "Catppuccin-Mocha-Lavender"; };
+        { General.theme = "catppuccin-mocha-lavender"; };
   };
 }

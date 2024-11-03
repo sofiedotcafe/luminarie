@@ -19,11 +19,12 @@
       networkmanager.enable = true;
     };
 
-    desktop.session.cosmic.enable = true;
+    desktop.session.gnome.enable = true;
 
     boot = {
       systemd.enable = true;
       lanzaboote.enable = true;
+      plymouth.enable = true;
     };
 
     programs.steam.enable = true;

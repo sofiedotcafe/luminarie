@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   modulesPath,
   ...
 }:
@@ -9,12 +8,7 @@
   imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
 
   boot = {
-    # 6.11 has amdgpu kernel regression issues
-    kernelPackages = pkgs.linuxPackages_6_10;
-
     kernelModules = [ "kvm-amd" ];
-
-    binfmt.emulatedSystems = [ "aarch64-linux" ];
 
     initrd = {
       systemd = {
@@ -61,7 +55,7 @@
     };
 
     "/boot" = {
-      device = "/dev/disk/by-uuid/D6CA-E277";
+      device = "/dev/disk/by-uuid/9D64-EA9A";
       fsType = "vfat";
     };
   };
