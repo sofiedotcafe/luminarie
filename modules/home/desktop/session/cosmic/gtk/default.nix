@@ -1,0 +1,25 @@
+{
+  config,
+  lib,
+  ...
+}:
+with lib;
+let
+  cfg = config.modules.home.desktop;
+in
+{
+  config = mkIf (cfg.session.cosmic.enable && cfg.catppuccin.enable) {
+    catppuccin.pointerCursor.enable = true;
+    home.pointerCursor = {
+      gtk.enable = true;
+      size = 24;
+    };
+    gtk = {
+      enable = true;
+      catppuccin = {
+        enable = true;
+        icon.enable = true;
+      };
+    };
+  };
+}

@@ -11,9 +11,8 @@ in
         inherit inputs;
       };
       modules = [
+        inputs.catppuccin.homeManagerModules.catppuccin
         inputs.arkenfox.hmModules.arkenfox
-        inputs.nix-flatpak.homeManagerModules.nix-flatpak
-
         ../modules/home
         ./jh-devv
       ];

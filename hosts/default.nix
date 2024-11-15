@@ -11,9 +11,8 @@ in
           inherit inputs;
         };
         modules = [
-          inputs.lanzaboote.nixosModules.lanzaboote
           inputs.nixos-cosmic.nixosModules.default
-
+          inputs.lanzaboote.nixosModules.lanzaboote
           ../modules/nixos
           ./aisu
         ];

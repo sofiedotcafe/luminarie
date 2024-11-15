@@ -2,8 +2,7 @@
 with lib;
 {
   imports = [
-    ./cosmic
-    ./gnome
+    ./session
   ];
 
   options.modules.nixos.desktop.session = {

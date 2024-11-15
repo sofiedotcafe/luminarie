@@ -6,25 +6,25 @@
   };
 
   modules.home = {
-    desktop.session.gnome.enable = true;
+    desktop = {
+      session.gnome.enable = true;
+      catppuccin.enable = true;
+    };
 
     programs =
       lib.genAttrs
         [
           "firefox"
-          "fractal"
           "vscode"
         ]
         (_k: {
           enable = true;
         });
-    services = lib.genAttrs [ "mpris-proxy" ] (_k: {
-      enable = true;
-    });
 
     shell = {
       package = pkgs.zsh;
       common.enable = true;
+      starship.enable = true;
     };
   };
 

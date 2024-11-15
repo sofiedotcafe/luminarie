@@ -38,8 +38,7 @@ Luminarie, the flake for my NixOS setups like `Aisu` ( ˶ˆ꒳ˆ˵ )
 
 ---
 
-> [!CAUTION]
-> Currently going over an major rewrite to use the Cosmic desktop environment!
+&nbsp; ![Screenshot Showcase](/assets/showcase.png)
 
 ### Contents
 

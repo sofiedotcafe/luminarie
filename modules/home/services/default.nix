@@ -1,6 +1,5 @@
 {
   imports = [
-    ./flatpak
     ./mpris-proxy
   ];
 }

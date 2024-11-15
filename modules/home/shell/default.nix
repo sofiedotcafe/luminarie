@@ -8,6 +8,7 @@ with lib;
   options.modules.home = {
     shell = {
       common.enable = mkEnableOption "common shell tools";
+      starship.enable = mkEnableOption "starship";
       fetcher.package = mkOption {
         type = types.package;
         description = ''
@@ -28,6 +29,7 @@ with lib;
   };
   imports = [
     ./zsh
+    ./starship
     ./common
   ];
 }

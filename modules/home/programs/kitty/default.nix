@@ -17,9 +17,10 @@ in
   config = mkIf cfg.enable {
     programs.kitty = {
       enable = true;
+
       shellIntegration.enableZshIntegration = true;
+
       font.name = "JetBrainsMono Nerd Font";
-      theme = "Catppuccin-Mocha";
     };
   };
 }

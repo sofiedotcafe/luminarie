@@ -4,13 +4,10 @@
   ...
 }:
 with lib;
-# let
-#   cfg = config.modules.home.desktop;
-# in
 {
   imports = [
-    ./cosmic
-    ./gnome
+    ./catppuccin
+    ./session
   ];
   options.modules.home = {
     desktop = {
@@ -45,6 +42,20 @@ with lib;
       session = {
         cosmic.enable = mkEnableOption "cosmic";
         gnome.enable = mkEnableOption "gnome";
+      };
+
+      catppuccin = {
+        enable = mkEnableOption "flavor";
+        flavor = mkOption {
+          type = types.str;
+          description = "The variant of Catppuccin to use.";
+          default = "mocha";
+        };
+        accent = mkOption {
+          type = types.str;
+          description = "The accent of Catppuccin to use.";
+          default = "lavender";
+        };
       };
 
       wallpaper = mkOption {
