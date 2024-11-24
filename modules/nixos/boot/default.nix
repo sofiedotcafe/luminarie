@@ -1,0 +1,7 @@
+{
+  imports = [
+    ./lanzaboote
+    ./plymouth
+    ./systemd
+  ];
+}
