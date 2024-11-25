@@ -17,6 +17,7 @@
       };
       devShells.default = pkgs.mkShell {
         packages = with pkgs; [
+          nixos-generators
           git
           just
         ];

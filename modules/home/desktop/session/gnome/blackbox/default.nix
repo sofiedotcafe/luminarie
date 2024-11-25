@@ -10,7 +10,7 @@ let
 in
 {
   config = mkIf (cfg.session.gnome.enable && cfg.catppuccin.enable) {
-    xdg.configFile."blackbox/schemes/catppuccin-${config.catppuccin.flavor}.json".source =
+    xdg.dataFile."blackbox/schemes/catppuccin-${config.catppuccin.flavor}.json".source =
       pkgs.fetchFromGitHub {
         owner = "catppuccin";
         repo = "tilix";

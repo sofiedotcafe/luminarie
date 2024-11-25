@@ -10,6 +10,7 @@ with lib;
           domainName = "local";
         }
       '';
+      default = {};
       type = types.attrs;
       description = ''
         The networking configuration of the system,

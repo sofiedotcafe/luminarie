@@ -16,12 +16,17 @@ in
         displayManager.gdm.enable = true;
         desktopManager.gnome.enable = true;
       };
-      system76-scheduler.enable = true;
+      gnome = {
+        tinysparql.enable = true;
+        localsearch.enable = true;
+      };
       pipewire = {
         enable = true;
         alsa.enable = true;
         pulse.enable = true;
       };
+
+      system76-scheduler.enable = true;
     };
 
     security.rtkit.enable = true;

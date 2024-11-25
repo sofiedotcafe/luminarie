@@ -12,6 +12,7 @@ with lib;
           };
         }
       '';
+      default = {};
       type = types.attrs;
       description = ''
         The user configuration of the system,

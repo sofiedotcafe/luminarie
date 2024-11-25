@@ -2,8 +2,12 @@
 let
   inherit (inputs.nixpkgs.lib) nixosSystem;
 
+  modules = [
+    inputs.lanzaboote.nixosModules.lanzaboote
+  ];
+
   mkSystem =
-    system: arch:
+    system: arch: modules:
     withSystem arch (
       _:
       nixosSystem {
@@ -11,16 +15,15 @@ let
           inherit inputs;
         };
         modules = [
-          inputs.lanzaboote.nixosModules.lanzaboote
           ../modules/nixos
           ./${system}
-        ];
+        ] ++ modules;
       }
     );
 in
 {
   flake.nixosConfigurations = {
-    azalea = mkSystem "azalea" "x86_64-linux";
-    cedarix = mkSystem "cedarix" "aarch64-linux";
+    azalea = mkSystem "azalea" "x86_64-linux" modules;
+    cedarix = mkSystem "cedarix" "aarch64-linux" modules;
   };
 }
