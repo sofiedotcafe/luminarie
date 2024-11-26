@@ -8,7 +8,7 @@ let
   cfg = config.modules.home.desktop;
 in
 {
-  config = mkIf (cfg.session.gnome.enable && cfg.catppuccin.enable) {
+  config = mkIf (cfg.gnome.enable && cfg.catppuccin.enable) {
     catppuccin.pointerCursor.enable = true;
     home.pointerCursor = {
       gtk.enable = true;

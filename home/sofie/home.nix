@@ -1,4 +1,3 @@
-{ pkgs, lib, ... }:
 {
   home = {
     username = "sofie";
@@ -7,24 +6,18 @@
 
   modules.home = {
     desktop = {
-      session.gnome.enable = true;
+      gnome.enable = true;
       catppuccin.enable = true;
     };
 
-    programs =
-      lib.genAttrs
-        [
-          "firefox"
-          "vscode"
-        ]
-        (_k: {
-          enable = true;
-        });
+    programs = {
+      firefox.enable = true;
+      vscode.enable = true;
+    };
 
     shell = {
-      package = pkgs.zsh;
-      common.enable = true;
       starship.enable = true;
+      zsh.enable = true;
     };
   };
 

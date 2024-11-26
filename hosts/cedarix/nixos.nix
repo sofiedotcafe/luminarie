@@ -1,4 +1,3 @@
-{ config, ... }:
 {
   modules.nixos = {
     language = {
@@ -6,25 +5,28 @@
       time = "Europe/Helsinki";
     };
 
-    users = {
-      nixos = {
-        isNormalUser = true;
-        extraGroups = [ "wheel" ];
-        initialHashedPassword = "";
-      };
-      root.initialHashedPassword = "";
-    };
-
-    networking = {
+    profile.minimal = {
+      enable = true;
       hostName = "cedarix";
-      networkmanager.enable = true;
+      interactiveSudo = false;
+
+      initiallyDisableRoot = true;
+      ssh = {
+        allowPasswords = true;
+        allowRootLogin = true;
+      };
     };
   };
 
-  services = {
-    getty.autologinUser = "nixos";
-    openssh.enable = true;
+  users.users = {
+    nixos = {
+      isNormalUser = true;
+      extraGroups = [ "wheel" ];
+      initialPassword = "";
+    };
   };
+
+  services.getty.autologinUser = "nixos";
 
   system.stateVersion = "23.05";
 }

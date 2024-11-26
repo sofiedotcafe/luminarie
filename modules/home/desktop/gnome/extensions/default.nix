@@ -6,7 +6,7 @@
 }:
 with lib;
 let
-  cfg = config.modules.home.desktop.session.gnome;
+  cfg = config.modules.home.desktop.gnome;
   extensions = with pkgs.gnomeExtensions; [
     appindicator
     blur-my-shell

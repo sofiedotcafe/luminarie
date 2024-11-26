@@ -6,9 +6,12 @@
 }:
 with lib;
 let
-  cfg = config.modules.nixos.desktop.session.gnome;
+  cfg = config.modules.nixos.desktop.gnome;
 in
 {
+  options.modules.nixos.desktop = {
+    gnome.enable = mkEnableOption "gnome";
+  };
   config = mkIf cfg.enable {
     services = {
       displayManager.enable = true;
@@ -29,7 +32,7 @@ in
       system76-scheduler.enable = true;
     };
 
-    security.rtkit.enable = true;
+    systemd.services."pre-sleep".wantedBy = lib.mkForce [ ];
 
     environment = {
       systemPackages = with pkgs; [

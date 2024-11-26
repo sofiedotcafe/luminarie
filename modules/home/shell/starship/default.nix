@@ -12,7 +12,7 @@ in
   config = mkIf cfg.starship.enable {
     programs.starship = {
       enable = true;
-      enableZshIntegration = cfg.package == pkgs.zsh;
+      enableZshIntegration = cfg.zsh.enable;
       settings = {
         custom.mommy = {
           command =

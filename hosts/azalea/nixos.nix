@@ -1,33 +1,33 @@
-{ config, ... }:
+{ pkgs, ... }:
 {
   modules.nixos = {
+    profile.minimal = {
+      enable = true;
+      hostName = "azalea";
+    };
     language = {
       layout = "fi";
       time = "Europe/Helsinki";
     };
+    desktop.gnome.enable = true;
+  };
 
-    users = {
-      sofie = {
-        shell = config.modules.nixos.shell.package;
-        isNormalUser = true;
-        extraGroups = [ "wheel" ];
-      };
+  users.users = {
+    sofie = {
+      isNormalUser = true;
+      extraGroups = [ "wheel" ];
+      shell = pkgs.zsh;
     };
+  };
 
-    networking = {
-      hostName = "azalea";
-      networkmanager.enable = true;
+  programs = {
+    steam = {
+      enable = true;
+      remotePlay.openFirewall = true;
+      extraCompatPackages = [ pkgs.proton-ge-bin ];
     };
-
-    desktop.session.gnome.enable = true;
-
-    boot = {
-      systemd.enable = true;
-      lanzaboote.enable = true;
-      plymouth.enable = true;
-    };
-
-    programs.steam.enable = true;
+    gamemode.enable = true;
+    zsh.enable = true;
   };
 
   system.stateVersion = "23.05";

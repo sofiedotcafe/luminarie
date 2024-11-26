@@ -2,10 +2,6 @@
 with lib;
 {
   imports = [
-    ./session
+    ./gnome
   ];
-
-  options.modules.nixos.desktop.session = {
-    gnome.enable = mkEnableOption "gnome";
-  };
 }

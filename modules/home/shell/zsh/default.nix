@@ -9,7 +9,7 @@ let
   cfg = config.modules.home.shell;
 in
 {
-  config = mkIf (cfg.package == pkgs.zsh) {
+  config = mkIf cfg.zsh.enable {
     programs = {
       zsh = {
         enable = true;

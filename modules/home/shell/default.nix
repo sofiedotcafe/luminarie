@@ -7,7 +7,11 @@ with lib;
 {
   options.modules.home = {
     shell = {
-      common.enable = mkEnableOption "common shell tools";
+      common.enable = mkEnableOption "common shell tools" // {
+        default = true;
+      };
+
+      zsh.enable = mkEnableOption "zsh";
       starship.enable = mkEnableOption "starship";
       fetcher.package = mkOption {
         type = types.package;
@@ -16,14 +20,6 @@ with lib;
         '';
         example = pkgs.hyfetch;
         default = pkgs.nitch;
-      };
-      package = mkOption {
-        type = types.package;
-        description = ''
-          The shell package to use.
-        '';
-        example = pkgs.bash;
-        default = pkgs.zsh;
       };
     };
   };

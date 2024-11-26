@@ -8,7 +8,7 @@ let
   cfg = config.modules.home.desktop;
 in
 {
-  config = mkIf cfg.session.gnome.enable {
+  config = mkIf cfg.gnome.enable {
     dconf.settings = {
       "org/gnome/mutter" = {
         dynamic-workspaces = false;

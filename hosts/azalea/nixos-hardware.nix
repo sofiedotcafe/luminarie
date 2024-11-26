@@ -69,6 +69,25 @@
     }
   ];
 
+  boot = {
+    loader = {
+      efi = {
+        canTouchEfiVariables = true;
+        efiSysMountPoint = "/boot";
+      };
+      systemd-boot = {
+        enable = lib.mkForce false;
+        consoleMode = "max";
+      };
+      timeout = 3;
+    };
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/etc/secureboot";
+    };
+    plymouth.enable = true;
+  };
+
   boot.binfmt.emulatedSystems = ["aarch64-linux"];
   nix.settings.extra-platforms = config.boot.binfmt.emulatedSystems;
 

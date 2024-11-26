@@ -9,7 +9,7 @@ let
   cfg = config.modules.home.desktop;
 in
 {
-  config = mkIf (cfg.session.gnome.enable && cfg.catppuccin.enable) {
+  config = mkIf (cfg.gnome.enable && cfg.catppuccin.enable) {
     xdg.dataFile."blackbox/schemes/catppuccin-${config.catppuccin.flavor}.json".source =
       pkgs.fetchFromGitHub {
         owner = "catppuccin";

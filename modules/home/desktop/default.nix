@@ -7,7 +7,7 @@ with lib;
 {
   imports = [
     ./catppuccin
-    ./session
+    ./gnome
   ];
   options.modules.home = {
     desktop = {
@@ -39,10 +39,8 @@ with lib;
         };
       */
 
-      session = {
-        gnome.enable = mkEnableOption "gnome";
-      };
-
+      gnome.enable = mkEnableOption "gnome";
+      
       catppuccin = {
         enable = mkEnableOption "flavor";
         flavor = mkOption {
