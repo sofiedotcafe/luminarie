@@ -1,9 +1,10 @@
 { inputs, withSystem, ... }:
 let
   inherit (inputs.nixpkgs.lib) nixosSystem;
+  inherit (inputs) lanzaboote;
 
   modules = [
-    inputs.lanzaboote.nixosModules.lanzaboote
+    lanzaboote.nixosModules.lanzaboote
   ];
 
   mkSystem =

@@ -12,15 +12,8 @@
   ];
 
   nixpkgs.overlays = [
-    (prev: super: {
+    (_: super: {
       makeModulesClosure = x: super.makeModulesClosure (x // { allowMissing = true; });
-      klipper-firmware = prev.klipper-firmware.overrideAttrs (_: {
-        installPhase = ''
-          mkdir -p $out
-          cp ./.config $out/config
-          cp -r out/* $out
-        '';
-      });
     })
   ];
 
