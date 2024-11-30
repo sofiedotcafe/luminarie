@@ -3,12 +3,14 @@
   imports = [ inputs.flake-parts.flakeModules.easyOverlay ];
   perSystem =
     {
-      system,
+      pkgs,
       ...
     }:
     {
       overlayAttrs = {
-        inherit (inputs.nixpkgs-stable.legacyPackages.${system}) plymouth;
+        gdm = pkgs.gdm.overrideAttrs (oldAttrs: rec {
+          patches = oldAttrs.patches or [ ] ++ [ ./patches/gdm-vt-allocation-race-condition-fix.patch ];
+        });
       };
     };
 }

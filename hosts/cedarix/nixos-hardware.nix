@@ -1,5 +1,4 @@
 {
-  pkgs,
   lib,
   inputs,
   modulesPath,
@@ -12,15 +11,15 @@
   ];
 
   nixpkgs.overlays = [
-    (prev: super: {
-      makeModulesClosure = x: super.makeModulesClosure (x // { allowMissing = true; });
-      klipper-firmware = prev.klipper-firmware.overrideAttrs (_: {
-        installPhase = ''
-          mkdir -p $out
-          cp ./.config $out/config
-          cp -r out/* $out
-        '';
-      });
+    (_: prev: {
+      makeModulesClosure = x: prev.makeModulesClosure (x // { allowMissing = true; });
+      pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
+        (_: python-prev: {
+          dbus-next = python-prev.dbus-next.overridePythonAttrs (_: {
+            doCheck = false;
+          });
+        })
+      ];
     })
   ];
 
@@ -28,11 +27,6 @@
     apply-overlays-dtmerge.enable = true;
     fkms-3d.enable = true;
   };
-
-  environment.systemPackages = with pkgs; [
-    libraspberrypi
-    raspberrypi-eeprom
-  ];
 
   networking = {
     useDHCP = lib.mkDefault true;
@@ -42,8 +36,10 @@
     };
   };
 
-  security.polkit.enable = true;
   services.openssh.enable = true;
+
+  boot.supportedFilesystems.zfs = lib.mkForce false;
+  sdImage.compressImage = false;
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 

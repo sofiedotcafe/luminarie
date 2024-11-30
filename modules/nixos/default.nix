@@ -1,8 +1,9 @@
 {
   imports = [
     ./nix.nix
-    ./desktop
     ./language
+    ./services
+    ./desktop
     ./profile
   ];
 }

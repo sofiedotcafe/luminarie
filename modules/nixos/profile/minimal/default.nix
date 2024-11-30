@@ -39,12 +39,18 @@ in
 
     users.users.root.initialHashedPassword = if cfg.initiallyDisableRoot then "!" else "";
 
-    security.sudo.wheelNeedsPassword = cfg.interactiveSudo;
-    security.polkit.enable = true;
+    security = {
+      sudo.wheelNeedsPassword = cfg.interactiveSudo;
+      polkit.enable = true;
+      rtkit.enable = true;
+    };
 
     networking = {
       inherit (cfg) hostName;
       networkmanager.enable = true;
     };
+
+    # https://discussion.fedoraproject.org/t/wpa-supplicant-logs/134579
+    systemd.services.wpa_supplicant.serviceConfig.LogLevelMax = 4;
   };
 }

@@ -30,5 +30,10 @@
     zsh.enable = true;
   };
 
+  i18n.inputMethod = {
+    enable = true;
+    type = "ibus";
+  };
+
   system.stateVersion = "23.05";
 }

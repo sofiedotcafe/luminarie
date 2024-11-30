@@ -23,9 +23,7 @@ in
       settings = {
         "org/gnome/shell" = {
           disable-user-extensions = false;
-          enabled-extensions = map (ext: ext.extensionUuid) extensions ++ [
-            "workspace-indicator@gnome-shell-extensions.gcampax.github.com"
-          ];
+          enabled-extensions = map (ext: ext.extensionUuid) extensions;
         };
 
         "org/gnome/shell/extensions/blur-my-shell/applications" = {
