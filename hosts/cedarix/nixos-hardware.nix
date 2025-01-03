@@ -2,13 +2,17 @@
   lib,
   inputs,
   modulesPath,
+  pkgs,
   ...
 }:
 {
   imports = [
     (inputs.nixos-hardware + "/raspberry-pi/4")
     (modulesPath + "/installer/sd-card/sd-image-aarch64.nix")
+    (modulesPath + "/profiles/minimal.nix")
   ];
+
+  disabledModules = [ "profiles/base.nix" ];
 
   nixpkgs.overlays = [
     (_: prev: {
@@ -25,23 +29,26 @@
 
   hardware.raspberry-pi."4" = {
     apply-overlays-dtmerge.enable = true;
-    fkms-3d.enable = true;
   };
 
-  networking = {
-    useDHCP = lib.mkDefault true;
-    networkmanager = {
-      enable = true;
-      wifi.powersave = false;
-    };
+  hardware.deviceTree = {
+    overlays = map (dtsFile: {
+      name = lib.removeSuffix ".dts" (builtins.baseNameOf dtsFile);
+      inherit dtsFile;
+    }) (lib.filesystem.listFilesRecursive ./firmware/overlays);
   };
 
-  services.openssh.enable = true;
+  boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
 
-  boot.supportedFilesystems.zfs = lib.mkForce false;
-  sdImage.compressImage = false;
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 90;
+  };
 
+  networking.useDHCP = lib.mkDefault true;
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
+  sdImage.compressImage = false;
 
   system.stateVersion = "23.05";
 }

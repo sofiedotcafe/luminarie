@@ -1,0 +1,140 @@
+/*
+ * vc4-kms-dpi.dtsi
+ */
+
+#define _DT_BINDINGS_GPIO_GPIO_H /* Bit 0 express polarity */
+#define GPIO_ACTIVE_HIGH 0
+#define GPIO_ACTIVE_LOW 1
+#define GPIO_PUSH_PULL 0
+#define GPIO_SINGLE_ENDED 2
+#define GPIO_LINE_OPEN_SOURCE 0
+#define GPIO_LINE_OPEN_DRAIN 4
+#define GPIO_OPEN_DRAIN (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_DRAIN)
+#define GPIO_OPEN_SOURCE (GPIO_SINGLE_ENDED | GPIO_LINE_OPEN_SOURCE)
+#define GPIO_PERSISTENT 0
+#define GPIO_TRANSITORY 8
+#define GPIO_PULL_UP 16
+#define GPIO_PULL_DOWN 32
+#define GPIO_PULL_DISABLE 64
+#define __DT_BINDINGS_PINCTRL_BCM2835_H__ /* brcm,function property */
+#define BCM2835_FSEL_GPIO_IN 0
+#define BCM2835_FSEL_GPIO_OUT 1
+#define BCM2835_FSEL_ALT5 2
+#define BCM2835_FSEL_ALT4 3
+#define BCM2835_FSEL_ALT0 4
+#define BCM2835_FSEL_ALT1 5
+#define BCM2835_FSEL_ALT2 6
+#define BCM2835_FSEL_ALT3 7
+#define BCM2835_PUD_OFF 0
+#define BCM2835_PUD_DOWN 1
+#define BCM2835_PUD_UP 2
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,brcm2711";
+
+	fragment@100 {
+		target-path = "/";
+		__overlay__ {
+			panel: panel {
+				rotation = <0>; /* rotate */
+				port {
+					panel_in: endpoint {
+						remote-endpoint = <&dpi_out>;
+					};
+				};
+			};
+		};
+	};
+
+	fragment@101 {
+		target = <&dpi>;
+		dpi_node: __overlay__  {
+			status = "okay";
+
+			pinctrl-names = "default";
+
+			port {
+				dpi_out: endpoint {
+					remote-endpoint = <&panel_in>;
+				};
+			};
+		};
+	};
+
+	fragment@102 {
+		target = <&panel>;
+		__dormant__  {
+			backlight = <&backlight>;
+		};
+	};
+
+	fragment@103 {
+		target-path = "/";
+		__dormant__  {
+			backlight: backlight {
+				compatible = "gpio-backlight";
+				gpios = <&gpio 19 GPIO_ACTIVE_HIGH>; /* backlight-gpio */
+			};
+		};
+	};
+
+	fragment@104 {
+		target = <&panel>;
+		__dormant__  {
+			backlight = <&backlight_pwm>;
+		};
+	};
+
+	fragment@105 {
+		target-path = "/";
+		__dormant__  {
+			backlight_pwm: backlight_pwm {
+				compatible = "pwm-backlight";
+				brightness-levels = <0 6 8 12 16 24 32 40 48 64 96 128 160 192 224 255>;
+				default-brightness-level = <16>;
+				pwms = <&pwm 0 200000 0>;
+			};
+		};
+	};
+
+	fragment@106 {
+		target = <&pwm>;
+		__dormant__ {
+			pinctrl-names = "default";
+			pinctrl-0 = <&pwm_pins>;
+			assigned-clock-rates = <1000000>;
+			status = "okay";
+		};
+	};
+
+	fragment@107 {
+		target = <&gpio>;
+		__dormant__ {
+			pwm_pins: pwm_pins {
+				brcm,pins = <18>;
+				brcm,function = <2>; /* Alt5 */
+			};
+		};
+	};
+
+	fragment@108 {
+		target = <&chosen>;
+		__dormant__  {
+			bootargs = "snd_bcm2835.enable_headphones=0";
+		};
+	};
+
+	__overrides__ {
+		backlight-gpio = <0>, "+102+103",
+			<&backlight>, "gpios:4";
+		backlight-pwm = <0>, "+104+105+106+107+108";
+		backlight-pwm-chan = <&backlight_pwm>, "pwms:4";
+		backlight-pwm-gpio = <&pwm_pins>, "brcm,pins:0";
+		backlight-pwm-func = <&pwm_pins>, "brcm,function:0";
+		backlight-def-brightness = <&backlight_pwm>, "default-brightness-level:0";
+		rotate = <&panel>, "rotation:0";
+	};
+};

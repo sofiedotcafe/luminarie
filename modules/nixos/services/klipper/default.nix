@@ -30,6 +30,10 @@ in
       default = true;
     };
 
+    klipperscreen.enable = mkEnableOption "klipperscreen" // {
+      default = true;
+    };
+
     configuration = mkOption {
       type = types.mkOptionType {
         name = "directory";
@@ -95,12 +99,7 @@ in
             installPhase =
               prev.installPhase
               + ''
-                # Nixpkgs patches the Klipper library files to use Python 3 instead of Python 2. 
-                # During this process, the directory is renamed from /lib/klippy to /lib/klipper. 
-                # However, the unpatched /lib/klippy folder remains in the output derivation, which should be removed.
-                # Though, due to some unknown permission issues, you need to make it writable first.
-                chmod -R u+w $out/lib/klippy
-                rm -r $out/lib/klippy
+                chmod -R u+w $out/lib/klippy && rm -r $out/lib/klippy
 
                 ${builtins.concatStringsSep "\n" (
                   map (plugin: "install -D ${plugin} $out/lib/klipper/extras/") cfg.plugins
@@ -120,48 +119,22 @@ in
           )
         );
       };
+
+      cage = lib.mkIf cfg.klipperscreen.enable {
+        enable = true;
+        user = "klipper";
+        program = "${lib.getExe pkgs.klipperscreen}";
+        environment.WLR_LIBINPUT_NO_DEVICES = "1";
+      };
     };
 
     systemd.services = {
-      # This might not be the ideal approach, but it avoids the need to fork the repository for this minor adjustment (e.g. removing the line that creates /var/lib/klipper/gcodes).
-      klipper.preStart =
-        let
-          cfg = config.services.klipper;
-          format = pkgs.formats.ini {
-            # https://github.com/NixOS/nixpkgs/pull/121613#issuecomment-885241996
-            listToValue =
-              l:
-              if builtins.length l == 1 then
-                lib.generators.mkValueStringDefault { } (lib.head l)
-              else
-                lib.concatMapStrings (s: "\n  ${lib.generators.mkValueStringDefault { } s}") l;
-            mkKeyValue = lib.generators.mkKeyValueDefault { } ":";
-          };
-          printerConfigPath =
-            if cfg.mutableConfig then cfg.mutableConfigFolder + "/printer.cfg" else "/etc/klipper.cfg";
-          printerConfigFile =
-            if cfg.settings != null then format.generate "klipper.cfg" cfg.settings else cfg.configFile;
-        in
-        lib.mkForce ''
-          mkdir -p ${cfg.mutableConfigFolder}
-          ${lib.optionalString cfg.mutableConfig ''
-            [ -e ${printerConfigPath} ] || {
-              cp ${printerConfigFile} ${printerConfigPath}
-              chmod +w ${printerConfigPath}
-            }
-          ''}
-        '';
-
       moonraker.script = lib.mkForce ''
         config_path="${config.services.moonraker.stateDir}/config"
+        mkdir -p $(basename "$config_path") && rm -rf $config_path
+        ln -s "${config.services.klipper.mutableConfigFolder}" "$config_path"
 
-        mkdir -p $(basename "$config_path")
-
-        echo $config_path      
-        rm -rf $config_path && ln -s "${config.services.klipper.mutableConfigFolder}" "$config_path"
-
-        chmod u+w "$config_path"
-        cp -n /etc/moonraker.cfg "$config_path/moonraker.cfg"
+        chmod u+w "$config_path" && cp -n /etc/moonraker.cfg "$config_path/moonraker.cfg"
         exec "${config.services.moonraker.package}/bin/moonraker" -d "${config.services.moonraker.stateDir}" -c "$config_path/moonraker.cfg"
       '';
     };

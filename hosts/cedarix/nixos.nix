@@ -18,7 +18,7 @@
 
     services.klipper = {
       enable = true;
-      configuration = ./configuration/klipper;
+      configuration = ./klipper;
     };
   };
 

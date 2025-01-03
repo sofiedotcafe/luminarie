@@ -1,0 +1,81 @@
+/*
+ * vc4-kms-dpi-generic-overlay.dts
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,brcm2711";
+
+	fragment@0 {
+		target = <&panel>;
+		panel_generic: __overlay__  {
+			compatible = "panel-dpi";
+
+			width-mm = <154>;
+			height-mm = <83>;
+			bus-format = <0x1015>; /* rgb666-padhi */
+
+			timing: panel-timing {
+				clock-frequency = <32000000>; /* clock-frequency */
+				hactive = <800>; /* hactive */
+				hfront-porch = <16>; /* hfp */
+				hsync-len = <1>; /* hsync */
+				hback-porch = <46>; /* hbp */
+				hsync-active = <1>;
+				vactive = <480>; /* vactive */
+				vfront-porch = <7>; /* vfp */
+				vsync-len = <3>; /* vsync */
+				vback-porch = <23>; /* vbp */
+				vsync-active = <1>;
+
+				de-active = <1>;
+				pixelclk-active = <1>;
+			};
+		};
+	};
+
+	fragment@1 {
+		target = <&dpi>;
+		dpi_node_generic: __overlay__  {
+			pinctrl-0 = <&dpi_18bit_cpadhi_gpio0>; /* rgb666-padhi */
+		};
+	};
+
+	__overrides__ {
+		clock-frequency = <&timing>, "clock-frequency:0";
+		hactive = <&timing>, "hactive:0";
+		hfp = <&timing>, "hfront-porch:0";
+		hsync = <&timing>, "hsync-len:0";
+		hbp = <&timing>, "hback-porch:0";
+		vactive = <&timing>, "vactive:0";
+		vfp = <&timing>, "vfront-porch:0";
+		vsync = <&timing>, "vsync-len:0";
+		vbp = <&timing>, "vback-porch:0";
+		hsync-invert = <&timing>, "hsync-active:0=0";
+		vsync-invert = <&timing>, "vsync-active:0=0";
+		de-invert = <&timing>, "de-active:0=0";
+		pixclk-invert = <&timing>, "pixelclk-active:0=0";
+		interlaced = <&timing>, "interlaced?";
+
+		width-mm = <&panel_generic>, "width-mm:0";
+		height-mm = <&panel_generic>, "height-mm:0";
+
+		rgb565 = <&panel_generic>, "bus-format:0=0x1017",
+			<&dpi_node_generic>, "pinctrl-0:0=",<&dpi_16bit_gpio0>;
+		rgb565-padhi = <&panel_generic>, "bus-format:0=0x1022",
+			<&dpi_node_generic>, "pinctrl-0:0=",<&dpi_16bit_cpadhi_gpio0>;
+		bgr666 = <&panel_generic>, "bus-format:0=0x1023";
+		bgr666-padhi = <&panel_generic>, "bus-format:0=0x1024",
+			<&dpi_node_generic>, "pinctrl-0:0=",<&dpi_18bit_cpadhi_gpio0>;
+		rgb666-padhi = <&panel_generic>, "bus-format:0=0x1015",
+			<&dpi_node_generic>, "pinctrl-0:0=",<&dpi_18bit_cpadhi_gpio0>;
+		bgr888 = <&panel_generic>, "bus-format:0=0x1013",
+			<&dpi_node_generic>, "pinctrl-0:0=",<&dpi_gpio0>;
+		rgb888 = <&panel_generic>, "bus-format:0=0x100a",
+			<&dpi_node_generic>, "pinctrl-0:0=",<&dpi_gpio0>;
+		bus-format = <&panel_generic>, "bus-format:0";
+		rgb-order = <&dpi_node_generic>, "rgb_order";
+	};
+};
