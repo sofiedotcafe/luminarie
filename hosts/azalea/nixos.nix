@@ -23,16 +23,14 @@
   programs = {
     steam = {
       enable = true;
-      remotePlay.openFirewall = true;
       extraCompatPackages = [ pkgs.proton-ge-bin ];
     };
     gamemode.enable = true;
     zsh.enable = true;
   };
 
-  i18n.inputMethod = {
+  services.pcscd = {
     enable = true;
-    type = "ibus";
   };
 
   system.stateVersion = "23.05";

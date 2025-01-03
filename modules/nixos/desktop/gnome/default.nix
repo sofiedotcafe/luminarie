@@ -25,24 +25,36 @@ in
       };
       pipewire = {
         enable = true;
-        alsa.enable = true;
         pulse.enable = true;
+        jack.enable = true;
+
+        alsa = {
+          enable = true;
+          support32Bit = true;
+        };
       };
 
       system76-scheduler.enable = true;
     };
 
+    i18n.inputMethod = {
+      enable = true;
+      type = "ibus";
+    };
+
     environment = {
       systemPackages = with pkgs; [
+        amberol
         blackbox-terminal
+        cavalier
         fractal
-        libnotify
       ];
       gnome.excludePackages = with pkgs; [
-        gnome-maps
-        gnome-tour
         gnome-connections
         gnome-console
+        gnome-tour
+        gnome-maps
+        gnome-music
         epiphany
         geary
         snapshot

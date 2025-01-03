@@ -29,6 +29,7 @@ in
         "org/gnome/shell/extensions/blur-my-shell/applications" = {
           blur = true;
           dynamic-opacity = true;
+          enable-all = true;
           opacity = 225;
         };
       };

@@ -36,11 +36,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
     catppuccin.url = "github:catppuccin/nix";
 
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
     lanzaboote = {
-      url = "github:nix-community/lanzaboote/v0.3.0";
+      url = "github:nix-community/lanzaboote/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

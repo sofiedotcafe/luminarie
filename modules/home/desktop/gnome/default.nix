@@ -1,10 +1,8 @@
 {
   imports = [
+    ./catppuccin
     ./dconf
     ./extensions
     ./fonts
-    ./blackbox
-    ./gtk
-    ./qt
   ];
 }

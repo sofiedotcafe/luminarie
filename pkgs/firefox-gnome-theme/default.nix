@@ -2,26 +2,34 @@
   lib,
   stdenvNoCC,
   fetchFromGitHub,
-  theme ? "catppuccin-mocha",
+  theme ? {
+    dark = ./themes/catppuccin-mocha.css;
+    light = null;
+  },
 }:
-
 let
   pname = "firefox-gnome-theme";
-  version = "129";
+  version = "133";
 in
-
-lib.checkListOfEnum "${pname}: selected theme" [ "catppuccin-mocha" ] [ theme ]
+lib.checkListOfEnum "${pname}: input theme variable has wrong type" [ "path" "null" ]
+  (map (theme: builtins.typeOf theme) [
+    theme.dark
+    theme.light
+  ])
   stdenvNoCC.mkDerivation
-  {
+  rec {
     inherit pname version;
     src = fetchFromGitHub {
       owner = "rafaelmardojai";
       repo = "${pname}";
       rev = "v${version}";
-      hash = "sha256-MOE9NeU2i6Ws1GhGmppMnjOHkNLl2MQMJmGhaMzdoJM=";
+      hash = "sha256-k7v5PE6OcqMkC/u7aokwcxKDmTKM+ejiZGCsH9MK0s0=";
     };
 
-    patches = [ ./themes/${theme}.patch ];
+    patchPhase = ''
+      ${lib.optionalString (theme.dark != null) "cp -f ${theme.dark} ./theme/colors/dark.css"}
+      ${lib.optionalString (theme.light != null) "cp -f ${theme.light} ./theme/colors/light.css"}
+    '';
 
     dontConfigure = true;
     dontBuild = true;
