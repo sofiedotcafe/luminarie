@@ -1,13 +1,11 @@
 {
   lib,
-  inputs,
   modulesPath,
   pkgs,
   ...
 }:
 {
   imports = [
-    (inputs.nixos-hardware + "/raspberry-pi/4")
     (modulesPath + "/installer/sd-card/sd-image-aarch64.nix")
     (modulesPath + "/profiles/minimal.nix")
   ];
@@ -27,11 +25,9 @@
     })
   ];
 
-  hardware.raspberry-pi."4" = {
-    apply-overlays-dtmerge.enable = true;
-  };
-
   hardware.deviceTree = {
+    enable = true;
+    filter = "*rpi-4-*.dtb";
     overlays = map (dtsFile: {
       name = lib.removeSuffix ".dts" (builtins.baseNameOf dtsFile);
       inherit dtsFile;
