@@ -1,0 +1,101 @@
+/*
+ * vc4-kms-dpi-overlay.dts
+ * Based on the device-tree files from raspberry-pi/kernel
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2711";
+
+	backlight: backlight {
+		compatible = "gpio-backlight";
+		gpios = <&gpio 19 0>;
+	};
+
+	panel {
+		compatible = "panel-dpi";
+
+		rotation = <0>;
+
+		width-mm = <95>;
+		height-mm = <54>;
+		bus-format = <0x1015>;
+
+		backlight = <&backlight>;
+
+		port {
+			panel_in: endpoint {
+				remote-endpoint = <&dpi_out>;
+			};
+		};
+
+		panel-timing {
+			clock-frequency = <32000000>;
+			hactive = <800>;
+			hfront-porch = <16>;
+			hsync-len = <1>;
+			hback-porch = <46>;
+			hsync-active = <1>;
+			vactive = <480>;
+			vfront-porch = <7>;
+			vsync-len = <3>;
+			vback-porch = <23>;
+			vsync-active = <1>;
+
+			de-active = <1>;
+			pixelclk-active = <1>;
+		};
+	};
+
+	i2c_gpio: i2c@0 {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpio 10 6>; 
+		scl-gpios = <&gpio 11 6>;
+		i2c-gpio,delay-us = <4>;
+
+		ft6236_14: ft6236@14 {
+			compatible = "goodix,gt911";
+			reg = <0x14>;
+			interrupt-parent = <&gpio>;
+			interrupts = <27 2>;
+			touchscreen-size-x = <800>;
+			touchscreen-size-y = <480>;
+			touchscreen-x-mm = <95>;
+			touchscreen-y-mm = <54>;
+		};
+
+		ft6236_5d: ft6236@5d {
+			compatible = "goodix,gt911";
+			reg = <0x5d>;
+			interrupt-parent = <&gpio>;
+			interrupts = <27 2>;
+			touchscreen-size-x = <800>;
+			touchscreen-size-y = <480>;
+			touchscreen-x-mm = <95>;
+			touchscreen-y-mm = <54>;
+		};
+	};
+};
+
+&dpi {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&dpi_18bit_cpadhi_gpio0>;
+
+	port {
+		dpi_out: endpoint {
+			remote-endpoint = <&panel_in>;
+		};
+	};
+};
+
+&gpio {
+	dpi_18bit_cpadhi_gpio0: dpi_18bit_cpadhi_gpio0 {
+		brcm,pins = <0 1 2 3 4 5 6 7 8 9 12 13 14 15 16 17 20 21 22 23 24 25>;
+		brcm,function = <6>;
+		brcm,pull = <0>;
+	};
+};
