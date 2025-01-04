@@ -25,14 +25,13 @@
     })
   ];
 
-  hardware.deviceTree = {
-    enable = true;
-    filter = "*rpi-4-*.dtb";
-    overlays = map (dtsFile: {
-      name = lib.removeSuffix ".dts" (builtins.baseNameOf dtsFile);
-      inherit dtsFile;
-    }) (lib.filesystem.listFilesRecursive ./firmware/overlays);
-  };
+  # hardware.deviceTree = {
+  #  enable = true;
+  #  overlays = map (dtsFile: {
+  #    name = lib.removeSuffix ".dts" (builtins.baseNameOf dtsFile);
+  #    inherit dtsFile;
+  #  }) (lib.filesystem.listFilesRecursive ./firmware/overlays);
+  # };
 
   boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
 
