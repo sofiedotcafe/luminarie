@@ -1,25 +1,18 @@
-{ inputs, withSystem, ... }:
+{
+  inputs,
+  sofLib,
+  ...
+}:
 let
-  inherit (inputs.home-manager.lib) homeManagerConfiguration;
+  inherit (sofLib) mkHome;
 
-  mkHomeConfig =
-    user: arch:
-    withSystem arch (
-      { pkgs, ... }:
-      homeManagerConfiguration {
-        inherit pkgs;
-        extraSpecialArgs = {
-          inherit inputs;
-        };
-        modules = [
-          inputs.catppuccin.homeManagerModules.catppuccin
-          inputs.arkenfox.hmModules.arkenfox
-          ../modules/home
-          ./${user}
-        ];
-      }
-    );
+  inherit (inputs.catppuccin.homeManagerModules) catppuccin;
+  inherit (inputs.arkenfox.hmModules) arkenfox;
+  modules = [
+    catppuccin
+    arkenfox
+  ];
 in
 {
-  flake.homeConfigurations."sofie@azalea" = mkHomeConfig "sofie" "x86_64-linux";
+  flake.homeConfigurations."sofie@azalea" = mkHome "sofie" "x86_64-linux" modules;
 }

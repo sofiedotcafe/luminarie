@@ -17,7 +17,14 @@ in
       displayManager.enable = true;
       xserver = {
         displayManager.gdm.enable = true;
-        desktopManager.gnome.enable = true;
+        desktopManager.gnome = {
+          enable = true;
+          extraGSettingsOverridePackages = [ pkgs.mutter ];
+          extraGSettingsOverrides = ''
+            [org.gnome.mutter]
+            experimental-features=['scale-monitor-framebuffer', 'variable-refresh-rate', 'xwayland-native-scaling']
+          '';
+        };
       };
       gnome = {
         tinysparql.enable = true;

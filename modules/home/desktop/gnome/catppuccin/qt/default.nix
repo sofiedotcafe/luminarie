@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }:
 with lib;
@@ -9,11 +10,14 @@ let
 in
 {
   config = mkIf (cfg.gnome.enable && cfg.catppuccin.enable) {
-    catppuccin.kvantum.enable = true;
+    catppuccin.kvantum.enable = lib.mkForce false;
     qt = {
       enable = true;
-      platformTheme.name = "kvantum";
-      style.name = "kvantum";
+      platformTheme.name = "gtk3";
+      style = {
+        name = with cfg.catppuccin; "catppuccin-${flavor}-${accent}";
+        package = pkgs.catppuccin-qt5ct;
+      };
     };
   };
 }

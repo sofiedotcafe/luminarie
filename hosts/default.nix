@@ -1,26 +1,15 @@
-{ inputs, withSystem, ... }:
+{
+  inputs,
+  sofLib,
+  ...
+}:
 let
-  inherit (inputs.nixpkgs.lib) nixosSystem;
-  inherit (inputs) lanzaboote;
+  inherit (sofLib) mkSystem;
 
+  inherit (inputs.lanzaboote.nixosModules) lanzaboote;
   modules = [
-    lanzaboote.nixosModules.lanzaboote
+    lanzaboote
   ];
-
-  mkSystem =
-    system: arch: modules:
-    withSystem arch (
-      _:
-      nixosSystem {
-        specialArgs = {
-          inherit inputs;
-        };
-        modules = [
-          ../modules/nixos
-          ./${system}
-        ] ++ modules;
-      }
-    );
 in
 {
   flake.nixosConfigurations = {
