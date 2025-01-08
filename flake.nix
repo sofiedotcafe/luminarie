@@ -9,10 +9,11 @@
       imports = [
         inputs.pre-commit-hooks.flakeModule
 
+        ./overlays
+        ./lib
+        ./pkgs
         ./hosts
         ./home
-        ./pkgs
-        ./overlays
 
         ./devshell
       ];

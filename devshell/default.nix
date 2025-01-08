@@ -12,7 +12,6 @@
           nixfmt-rfc-style.enable = true;
           deadnix.enable = true;
           statix.enable = true;
-          nil.enable = true;
         };
       };
       devShells.default = pkgs.mkShell {

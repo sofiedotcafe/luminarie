@@ -9,10 +9,10 @@
       ...
     }:
     {
-      overlayAttrs = { } // config.packages;
+      overlayAttrs = config.packages;
       packages = lib.packagesFromDirectoryRecursive {
         inherit (pkgs) callPackage;
-        directory = ./.;
+        directory = ./by-name;
       };
     };
 }

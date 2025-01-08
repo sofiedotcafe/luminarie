@@ -1,0 +1,3 @@
+{
+  fetchPackwizModpack = import ./fetchPackwizModpack.nix;
+}
