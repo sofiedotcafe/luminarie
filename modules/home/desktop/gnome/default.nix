@@ -4,5 +4,6 @@
     ./dconf
     ./extensions
     ./fonts
+    ./xdg
   ];
 }
