@@ -133,6 +133,7 @@ in
               cloudStorageEnabled = false;
             };
             selectedFilterLists = [
+              "user-filters"
               "adguard-generic"
               "adguard-annoyance"
               "adguard-cookies"
