@@ -7,7 +7,7 @@ let
   inherit (sofLib) mkHome;
 
   modules = with inputs; [
-    catppuccin.homeManagerModules.catppuccin
+    catppuccin.homeModules.catppuccin
     arkenfox.hmModules.arkenfox
   ];
 in

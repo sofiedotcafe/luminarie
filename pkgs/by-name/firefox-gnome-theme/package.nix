@@ -11,7 +11,7 @@ let
   pname = "firefox-gnome-theme";
   version = "136";
 in
-lib.checkListOfEnum "${pname}: input theme variable has wrong type" [ "path" "null" ]
+lib.checkListOfEnum "${pname}: input theme variable has wrong type" [ "path" "string" "null" ]
   (map (theme: builtins.typeOf theme) [
     theme.dark
     theme.light
@@ -27,8 +27,19 @@ lib.checkListOfEnum "${pname}: input theme variable has wrong type" [ "path" "nu
     };
 
     patchPhase = ''
-      ${lib.optionalString (theme.dark != null) "cp -f ${theme.dark} ./theme/colors/dark.css"}
-      ${lib.optionalString (theme.light != null) "cp -f ${theme.light} ./theme/colors/light.css"}
+      ${builtins.concatStringsSep "\n" (
+        builtins.filter (x: x != "") (
+          map (
+            k:
+            if theme.${k} != null then
+              "cp -f ${
+                if builtins.isString theme.${k} then ./themes/${theme.${k}}.css else theme.${k}
+              } ./theme/colors/${k}.css"
+            else
+              ""
+          ) builtins.attrNames theme
+        )
+      )}
     '';
 
     dontConfigure = true;

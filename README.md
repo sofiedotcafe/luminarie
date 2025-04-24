@@ -96,6 +96,10 @@ Remember to replace my `hostname` and `user` with yours!
 
 ### Licenses
 
+The code in this repository is licensed under the GNU General Public License v3 (GPLv3). For more details, see the [LICENSE](LICENSE) file.
+
+#### ➔ Attributions
+
 - The project's README has been inspired by the format and structure used by
   [The Catppuccin Theme Project](https://github.com/catppuccin) and the original
   can be found at
@@ -103,10 +107,8 @@ Remember to replace my `hostname` and `user` with yours!
   Additionally, the project is licensed under the MIT License, available
   [here](https://raw.githubusercontent.com/catppuccin/catppuccin/main/LICENSE).
 
-#### ➔ Attributions
-
 - I extend my heartfelt thanks to the Nix community for their tireless
   efforts and their from on their awesome Flakes. You can find some of them on
   [their GitHub community organization page](https://github.com/nix-community)!
 
-[AGPL-3 License](LICENSE) © [sofiedotcafe](https://sofie.cafe)
+[GPLv3 License](LICENSE) © [sofiedotcafe](https://sofie.cafe)
