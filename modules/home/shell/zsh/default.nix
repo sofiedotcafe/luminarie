@@ -12,7 +12,7 @@ in
     programs = {
       zsh = {
         enable = true;
-        initExtra = getExe cfg.fetcher.package;
+        initContent = getExe cfg.fetcher.package;
 
         syntaxHighlighting.enable = true;
         autosuggestion.enable = true;
