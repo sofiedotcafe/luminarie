@@ -7,27 +7,47 @@ in
   /*
     Creates a NixOS configuration.
 
-    Type: mkSystem :: string -> string -> list -> attrset
+    Type: mkSystem :: {
+      name: string,
+      hostPlatform: string,
+      buildPlatform?: string,
+      modules?: list
+    } -> attrset
 
     Args:
-      system: The name of the system (e.g., "x86_64-linux").
-      arch: The architecture of the system (e.g., "x86_64").
-      modules: A list of additional NixOS modules to include.
+      name: The system name (e.g., "laptop").
+      hostPlatform: The target platform string (e.g., "x86_64-linux").
+      buildPlatform: (Optional) The build platform string. Defaults to hostPlatform.
+      modules: Extra NixOS modules to include.
 
     Example:
-      mkSystem "x86_64-linux" "x86_64" [ ./extra-module.nix ]
+      mkSystem {
+        name = "laptop";
+        hostPlatform = "x86_64-linux";
+        modules = [ ./extra.nix ];
+      }
   */
   mkSystem =
-    system: arch: modules:
-    withSystem arch (
+    {
+      name,
+      hostPlatform,
+      buildPlatform ? hostPlatform,
+      modules ? [ ],
+    }:
+    withSystem hostPlatform (
       { sofLib, ... }:
       nixosSystem {
         specialArgs = {
           inherit inputs sofLib;
         };
         modules = [
+          {
+            nixpkgs = {
+              inherit hostPlatform buildPlatform;
+            };
+          }
           "${inputs.self}/modules/nixos"
-          "${inputs.self}/hosts/${system}"
+          "${inputs.self}/hosts/${name}"
         ] ++ modules;
       }
     );
@@ -35,19 +55,31 @@ in
   /*
     Creates a Home Manager configuration.
 
-    Type: mkHome :: string -> string -> list -> attrset
+    Type: mkHome :: {
+      name: string,
+      system: string,
+      modules?: list
+    } -> attrset
 
     Args:
-      user: The name of the user.
-      arch: The architecture of the system (e.g., "x86_64").
-      modules: A list of additional Home Manager modules to include.
+      name: The username (e.g., "sofie").
+      system: The system architecture (e.g., "x86_64-linux").
+      modules: A list of additional Home Manager modules.
 
     Example:
-      mkHome "sofie" "x86_64" [ ./extra-home-module.nix ]
+      mkHome {
+        name = "sofie";
+        system = "x86_64-linux";
+        modules = [ ./extra-home.nix ];
+      }
   */
   mkHome =
-    user: arch: modules:
-    withSystem arch (
+    {
+      name,
+      system,
+      modules ? [ ],
+    }:
+    withSystem system (
       { pkgs, sofLib, ... }:
       homeManagerConfiguration {
         inherit pkgs;
@@ -56,7 +88,7 @@ in
         };
         modules = [
           "${inputs.self}/modules/home"
-          "${inputs.self}/home/${user}"
+          "${inputs.self}/home/${name}"
         ] ++ modules;
       }
     );

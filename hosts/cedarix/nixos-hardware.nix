@@ -44,8 +44,5 @@
   };
 
   networking.useDHCP = lib.mkDefault true;
-  nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
   sdImage.compressImage = false;
-
-  system.stateVersion = "23.05";
 }

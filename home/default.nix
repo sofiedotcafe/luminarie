@@ -12,5 +12,9 @@ let
   ];
 in
 {
-  flake.homeConfigurations."sofie@azalea" = mkHome "sofie" "x86_64-linux" modules;
+  flake.homeConfigurations."sofie@azalea" = mkHome {
+    name = "sofie";
+    system = "x86_64-linux";
+    inherit modules;
+  };
 }

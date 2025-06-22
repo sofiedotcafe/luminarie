@@ -88,12 +88,7 @@
     plymouth.enable = true;
   };
 
-  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
-  nix.settings.extra-platforms = config.boot.binfmt.emulatedSystems;
-
   networking.useDHCP = lib.mkDefault true;
-
-  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
 
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 }
