@@ -37,7 +37,7 @@ lib.checkListOfEnum "${pname}: input theme variable has wrong type" [ "path" "st
               } ./theme/colors/${k}.css"
             else
               ""
-          ) builtins.attrNames theme
+          ) (builtins.attrNames theme)
         )
       )}
     '';
