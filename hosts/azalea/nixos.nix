@@ -10,6 +10,7 @@
       time = "Europe/Helsinki";
     };
     desktop.gnome.enable = true;
+    services.openrgb.enable = true;
   };
 
   users.users = {
@@ -33,6 +34,5 @@
   };
 
   services.pcscd.enable = true;
-
   system.stateVersion = "23.05";
 }

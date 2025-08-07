@@ -8,11 +8,15 @@
       pkgs,
       ...
     }:
-    {
-      overlayAttrs = config.packages;
+    let
       packages = lib.packagesFromDirectoryRecursive {
         inherit (pkgs) callPackage;
         directory = ./by-name;
       };
+      # overlays = { };
+    in
+    {
+      inherit packages;
+      overlayAttrs = config.packages;
     };
 }

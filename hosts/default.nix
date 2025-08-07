@@ -8,7 +8,7 @@ let
 
   modules = with inputs; [
     lanzaboote.nixosModules.lanzaboote
-    lix.nixosModules.default
+    lix-nixos-module.nixosModules.default
   ];
 in
 {

@@ -41,9 +41,8 @@ in
                   '';
                 }
               )
-            } -1";
+            } -1 -s $status";
           style = "bold pink";
-          shell = "/bin/sh";
           when = "true";
         };
 

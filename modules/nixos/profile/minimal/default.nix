@@ -37,7 +37,9 @@ in
       };
     };
 
-    users.users.root.initialHashedPassword = if cfg.initiallyDisableRoot then "!" else "";
+    users.users.root.initialHashedPassword = lib.mkDefault (
+      if cfg.initiallyDisableRoot then "!" else ""
+    );
 
     security = {
       sudo.wheelNeedsPassword = cfg.interactiveSudo;

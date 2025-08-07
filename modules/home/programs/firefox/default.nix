@@ -120,7 +120,6 @@ in
             }
             (extension "{7a7a4a92-a2a0-41d1-9fd7-1e92480d612d}" "https://addons.mozilla.org/firefox/downloads/latest/styl-us/latest.xpi")
             (extension "uBlock0@raymondhill.net" "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi")
-            (extension "shinigamieyes@shinigamieyes" "https://addons.mozilla.org/firefox/downloads/latest/shinigami-eyes/latest.xpi")
           ];
 
         "3rdparty".Extensions = {
@@ -240,6 +239,8 @@ in
           id = 0;
           isDefault = true;
           name = "${config.home.username}";
+
+          extensions.force = true;
 
           search = {
             force = true;

@@ -14,26 +14,28 @@ in
   };
   config = mkIf cfg.enable {
     services = {
-      displayManager.enable = true;
-      xserver = {
-        displayManager.gdm.enable = true;
-        desktopManager.gnome = {
-          enable = true;
-          extraGSettingsOverrides = ''
-            [org.gnome.mutter]
-            experimental-features=['scale-monitor-framebuffer', 'variable-refresh-rate', 'xwayland-native-scaling']
-            check-alive-timeout=${
-              # Default is 5000ms, but that's bit too small for us.
-              lib.gvariant.mkUint32 (15 * 1000)
-            }
-          '';
-          extraGSettingsOverridePackages = [ pkgs.mutter ];
-        };
+      displayManager = {
+        enable = true;
+        gdm.enable = true;
+      };
+      desktopManager.gnome = {
+        enable = true;
+        extraGSettingsOverrides = ''
+          [org.gnome.mutter]
+          experimental-features=['scale-monitor-framebuffer', 'variable-refresh-rate', 'xwayland-native-scaling']
+          check-alive-timeout=${
+            # Default is 5000ms, but that's bit too small for us.
+            lib.gvariant.mkUint32 (15 * 1000)
+          }
+        '';
+        extraGSettingsOverridePackages = [ pkgs.mutter ];
       };
       gnome = {
         tinysparql.enable = true;
         localsearch.enable = true;
       };
+      gvfs.enable = true;
+
       pipewire = {
         enable = true;
         pulse.enable = true;
@@ -68,10 +70,7 @@ in
         fractal
       ];
       gnome.excludePackages = with pkgs; [
-        gnome-connections
         gnome-console
-        gnome-tour
-        gnome-maps
         gnome-music
         epiphany
         geary

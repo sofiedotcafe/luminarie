@@ -96,15 +96,13 @@ in
 
         package = pkgs.klipper.overrideAttrs (
           _: prev: {
-            installPhase =
-              prev.installPhase
-              + ''
-                chmod -R u+w $out/lib/klippy && rm -r $out/lib/klippy
+            installPhase = prev.installPhase + ''
+              chmod -R u+w $out/lib/klippy && rm -r $out/lib/klippy
 
-                ${builtins.concatStringsSep "\n" (
-                  map (plugin: "install -D ${plugin} $out/lib/klipper/extras/") cfg.plugins
-                )}
-              '';
+              ${builtins.concatStringsSep "\n" (
+                map (plugin: "install -D ${plugin} $out/lib/klipper/extras/") cfg.plugins
+              )}
+            '';
           }
         );
 
@@ -134,7 +132,11 @@ in
         mkdir -p $(basename "$config_path") && rm -rf $config_path
         ln -s "${config.services.klipper.mutableConfigFolder}" "$config_path"
 
-        chmod u+w "$config_path" && cp -n /etc/moonraker.cfg "$config_path/moonraker.cfg"
+        chown -R klipper:klipper "$config_path"
+        chmod -R u+rwX "$config_path"/*
+        chmod u+w "$config_path"/*
+
+        cp -n /etc/moonraker.cfg "$config_path/moonraker.cfg"
         exec "${config.services.moonraker.package}/bin/moonraker" -d "${config.services.moonraker.stateDir}" -c "$config_path/moonraker.cfg"
       '';
     };

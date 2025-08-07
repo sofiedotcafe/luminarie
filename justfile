@@ -1,30 +1,41 @@
 #!/usr/bin/env -S just --justfile
-# An stupidly complex just script for nice rebuilding of the host!
+
+# ── Defaults ───────────────────────────────
 
 origin := '.'
 user   := `whoami`
 host   := `hostname`
+args   := ''
 
-action := 'nixos'
+# ── Default ────────────────────────────────
 
 [private]
 default:
   @just --list
 
-rebuild action="nixos":
-  @just rebuild-{{action}} {{host}} {{user}} {{origin}}
+# ── Entrypoint ─────────────────────────────
+
+# → Deploy system or user config, 
+deploy action="nixos":
+  @just deploy-{{action}} {{host}} {{user}} {{origin}} "{{args}}"
+
+# ── Subcommands ────────────────────────────
 
 [private]
-rebuild-nixos host user origin:
-  @sudo nixos-rebuild switch --flake {{origin}}#{{host}}
+deploy-nixos host user origin args="":
+  @sudo nixos-rebuild switch --flake {{origin}}#{{host}} {{args}}
 
 [private]
-rebuild-home-manager host user origin:
-  @sudo -u {{user}} home-manager switch --flake {{origin}}#{{user}}@{{host}}
+deploy-home-manager host user origin args="":
+  @sudo -u {{user}} home-manager switch --flake {{origin}}#{{user}}@{{host}} {{args}}
 
-clean:
-  @sudo nix-collect-garbage -d
-  @sudo -u {{user}} nix-collect-garbage -d
+# ── Utilities ──────────────────────────────
 
+# → Run nix flake update
 update input="":
   @nix flake update {{input}}
+
+# → Collect system/user garbage
+clean user=user:
+  @sudo nix-collect-garbage -d
+  @sudo -u {{user}} nix-collect-garbage -d
