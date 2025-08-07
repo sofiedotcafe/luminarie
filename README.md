@@ -33,7 +33,7 @@
 </p>
 
 <p align="center">
-Luminarie, the flake for my NixOS setups like `Azalea` and `Cedarix`! 🌸 (｡•̀ᴗ-)✧
+Luminarie, the flake for my NixOS infra! 🌸 (｡•̀ᴗ-)✧
 </p>
 
 ---

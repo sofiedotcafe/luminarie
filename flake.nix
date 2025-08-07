@@ -1,5 +1,5 @@
 {
-  description = "A NixOS Flake for my NixOS setups like Azalea and Cedarix! 🌸 (｡•̀ᴗ-)✧";
+  description = "A NixOS Flake for my NixOS infra! 🌸 (｡•̀ᴗ-)✧";
 
   outputs =
     inputs:
