@@ -29,7 +29,7 @@ in
   config = mkIf cfg.enable {
     services.hardware.openrgb = {
       enable = true;
-      inherit package;
+      inherit (cfg) package;
     };
     environment.systemPackages = [ cfg.package ];
   };

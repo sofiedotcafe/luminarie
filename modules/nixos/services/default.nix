@@ -1,5 +1,6 @@
 {
   imports = [
     ./klipper
+    ./openrgb
   ];
 }
