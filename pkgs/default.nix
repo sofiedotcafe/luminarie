@@ -13,7 +13,6 @@
         inherit (pkgs) callPackage;
         directory = ./by-name;
       };
-      # overlays = { };
     in
     {
       inherit packages;
