@@ -25,10 +25,11 @@ in
       gnugrep
       lsd
       nitch
-      ripgrep-all
+      ripgrep
       trash-cli
       zip
       unzip
+      wget
     ];
   };
 }

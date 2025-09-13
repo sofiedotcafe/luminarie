@@ -30,6 +30,7 @@
   home.packages = with pkgs; [
     atostekid
     vintagestory
+    signal-desktop
     (prismlauncher.override {
       jdks = with pkgs; [
         jdk23

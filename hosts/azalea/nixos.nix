@@ -16,7 +16,10 @@
   users.users = {
     sofie = {
       isNormalUser = true;
-      extraGroups = [ "wheel" ];
+      extraGroups = [
+        "wheel"
+        "libvirtd"
+      ];
       shell = pkgs.zsh;
     };
   };
@@ -31,8 +34,16 @@
     gamemode.enable = true;
     gamescope.enable = true;
     zsh.enable = true;
+
+    virt-manager.enable = true;
+  };
+
+  virtualisation = {
+    libvirtd.enable = true;
+    spiceUSBRedirection.enable = true;
   };
 
   services.pcscd.enable = true;
+
   system.stateVersion = "23.05";
 }

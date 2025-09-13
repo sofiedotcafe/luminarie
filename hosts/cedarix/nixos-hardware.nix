@@ -20,6 +20,9 @@
           dbus-next = python-prev.dbus-next.overridePythonAttrs (_: {
             doCheck = false;
           });
+          python-can = python-prev.python-can.overridePythonAttrs (_: {
+            doCheck = false;
+          });
         })
       ];
     })

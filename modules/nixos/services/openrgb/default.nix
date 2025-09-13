@@ -15,13 +15,13 @@ in
     package = mkOption {
       type = types.package;
       default = pkgs.openrgb-with-all-plugins.overrideAttrs (_: {
-        version = "0-unstable-2025-08-06";
-        src = pkgs.fetchFromGitLab {
-          owner = "CalcProgrammer1";
-          repo = "OpenRGB";
-          rev = "e6190ec2756fe99971f057621efc234680db79ec";
-          hash = "sha256-Q64ouAIJFxp5cmt+zjYPqIHjcXBz3Ueulj7/lAsOVVA=";
-        };
+        # version = "0-unstable-2025-08-06";
+        # src = pkgs.fetchFromGitLab {
+        #   owner = "CalcProgrammer1";
+        #   repo = "OpenRGB";
+        #   rev = "e6190ec2756fe99971f057621efc234680db79ec";
+        #   hash = "sha256-Q64ouAIJFxp5cmt+zjYPqIHjcXBz3Ueulj7/lAsOVVA=";
+        # };
       });
     };
   };

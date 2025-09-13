@@ -8,7 +8,6 @@ let
 
   modules = with inputs; [
     lanzaboote.nixosModules.lanzaboote
-    lix-nixos-module.nixosModules.default
   ];
 in
 {
@@ -21,7 +20,6 @@ in
     cedarix = mkSystem {
       name = "cedarix";
       hostPlatform = "aarch64-linux";
-      buildPlatform = "x86_64-linux";
       modules = modules ++ [ inputs.nixos-hardware.nixosModules.raspberry-pi-4 ];
     };
   };

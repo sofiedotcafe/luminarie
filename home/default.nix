@@ -8,6 +8,8 @@ let
 
   modules = with inputs; [
     catppuccin.homeModules.catppuccin
+    qt-decorations.homeModules.qt-decorations
+
     arkenfox.hmModules.arkenfox
   ];
 in
