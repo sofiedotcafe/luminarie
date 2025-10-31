@@ -31,15 +31,28 @@
         proton-ge-bin
       ];
     };
+    gamescope = {
+      enable = true;
+      args = [
+        "--backend sdl"
+        "-f"
+        "-w 2560 -h 1440"
+      ];
+      env = {
+        SDL_VIDEODRIVER = "x11"; # gamescope currently has issues with mutter
+      };
+    };
     gamemode.enable = true;
-    gamescope.enable = true;
     zsh.enable = true;
 
     virt-manager.enable = true;
   };
 
   virtualisation = {
-    libvirtd.enable = true;
+    libvirtd = {
+      enable = true;
+      qemu.vhostUserPackages = with pkgs; [ virtiofsd ];
+    };
     spiceUSBRedirection.enable = true;
   };
 

@@ -23,7 +23,7 @@
     };
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:sofiedotcafe/nixpkgs/nixos-unstable";
 
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
@@ -40,8 +40,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
-
     catppuccin.url = "github:catppuccin/nix";
 
     qt-decorations = {
@@ -54,6 +52,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/main";
+
     arkenfox.url = "github:dwarfmaster/arkenfox-nixos";
+    nix-citizen.url = "github:LovingMelody/nix-citizen";
   };
 }

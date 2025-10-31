@@ -48,7 +48,8 @@ in
           }
           "${inputs.self}/modules/nixos"
           "${inputs.self}/hosts/${name}"
-        ] ++ modules;
+        ]
+        ++ modules;
       }
     );
 
@@ -89,7 +90,8 @@ in
         modules = [
           "${inputs.self}/modules/home"
           "${inputs.self}/home/${name}"
-        ] ++ modules;
+        ]
+        ++ modules;
       }
     );
 }

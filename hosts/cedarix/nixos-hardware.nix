@@ -1,7 +1,6 @@
 {
   lib,
   modulesPath,
-  pkgs,
   ...
 }:
 {
@@ -12,40 +11,34 @@
 
   disabledModules = [ "profiles/base.nix" ];
 
+  sdImage.compressImage = false;
+
   nixpkgs.overlays = [
     (_: prev: {
       makeModulesClosure = x: prev.makeModulesClosure (x // { allowMissing = true; });
       pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [
-        (_: python-prev: {
-          dbus-next = python-prev.dbus-next.overridePythonAttrs (_: {
-            doCheck = false;
-          });
-          python-can = python-prev.python-can.overridePythonAttrs (_: {
-            doCheck = false;
-          });
-        })
+        (
+          _: prev:
+          builtins.listToAttrs (
+            map
+              (name: {
+                inherit name;
+                value = prev.${name}.overridePythonAttrs (_: {
+                  doCheck = false;
+                });
+              })
+              [
+                "dbus-next"
+                "python-can"
+                "curl-cffi"
+              ]
+          )
+        )
       ];
     })
   ];
 
-  hardware.raspberry-pi."4" = {
-    apply-overlays-dtmerge.enable = true;
-    fkms-3d.enable = true;
-  };
-
-  environment.systemPackages = with pkgs; [
-    libraspberrypi
-    raspberrypi-eeprom
-  ];
-
-  boot.blacklistedKernelModules = [ "brcmfmac" ]; # Disable built-in WiFi
-
-  zramSwap = {
-    enable = true;
-    algorithm = "zstd";
-    memoryPercent = 90;
-  };
+  boot.blacklistedKernelModules = [ "brcmfmac" ];
 
   networking.useDHCP = lib.mkDefault true;
-  sdImage.compressImage = false;
 }

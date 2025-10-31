@@ -20,7 +20,21 @@ in
     cedarix = mkSystem {
       name = "cedarix";
       hostPlatform = "aarch64-linux";
-      modules = modules ++ [ inputs.nixos-hardware.nixosModules.raspberry-pi-4 ];
+      modules =
+        modules
+        ++ (
+          with inputs;
+          with nixos-raspberrypi.nixosModules;
+          [
+            {
+              disabledModules = [ "system/boot/loader/raspberrypi.nix" ];
+            }
+
+            raspberry-pi-4.base
+            raspberry-pi-4.display-vc4
+            nixos-raspberrypi.lib.inject-overlays
+          ]
+        );
     };
   };
 }

@@ -83,14 +83,12 @@
     };
     lanzaboote = {
       enable = true;
-      pkiBundle = "/etc/secureboot";
+      pkiBundle = "/var/lib/sbctl";
     };
     plymouth.enable = true;
   };
-
-  hardware.graphics.enable32Bit = true;
+  environment.systemPackages = [ pkgs.sbctl ];
 
   networking.useDHCP = lib.mkDefault true;
-
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 }

@@ -47,6 +47,13 @@ in
       users.klipper = {
         uid = 982;
         group = "klipper";
+        extraGroups = [
+          "video"
+          "input"
+          "render"
+          "seat"
+        ];
+        home = "/var/lib/klipper";
         isSystemUser = true;
       };
     };
@@ -122,8 +129,16 @@ in
         enable = true;
         user = "klipper";
         program = "${lib.getExe pkgs.klipperscreen}";
-        environment.WLR_LIBINPUT_NO_DEVICES = "1";
+        environment = {
+          HOME = "/var/lib/klipper";
+          WLR_DRM_DEVICES = "/dev/dri/card1";
+          WLR_EGL_PLATFORM = "drm";
+          WLR_LIBINPUT_NO_DEVICES = "1";
+        };
       };
+
+      seatd.enable = cfg.klipperscreen.enable;
+      libinput.enable = cfg.klipperscreen.enable;
     };
 
     systemd.services = {
@@ -135,6 +150,8 @@ in
         chown -R klipper:klipper "$config_path"
         chmod -R u+rwX "$config_path"/*
         chmod u+w "$config_path"/*
+
+        rm -rf "$config_path"/gcodes
 
         cp -n /etc/moonraker.cfg "$config_path/moonraker.cfg"
         exec "${config.services.moonraker.package}/bin/moonraker" -d "${config.services.moonraker.stateDir}" -c "$config_path/moonraker.cfg"

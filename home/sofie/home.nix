@@ -28,8 +28,8 @@
   systemd.user.startServices = "sd-switch";
 
   home.packages = with pkgs; [
-    atostekid
     vintagestory
+    rsi-launcher
     signal-desktop
     (prismlauncher.override {
       jdks = with pkgs; [
