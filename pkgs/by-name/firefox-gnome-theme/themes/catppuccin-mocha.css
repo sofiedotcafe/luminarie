@@ -1,0 +1,157 @@
+@namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Catppuccin Mocha palette */
+    --catppuccin-rosewater: #f5e0dc;
+    --catppuccin-flamingo: #f2cdcd;
+    --catppuccin-pink: #f5c2e7;
+    --catppuccin-mauve: #cba6f7;
+    --catppuccin-red: #f38ba8;
+    --catppuccin-maroon: #eba0ac;
+    --catppuccin-peach: #fab387;
+    --catppuccin-yellow: #f9e2af;
+    --catppuccin-green: #a6e3a1;
+    --catppuccin-teal: #94e2d5;
+    --catppuccin-sky: #89dceb;
+    --catppuccin-sapphire: #74c7ec;
+    --catppuccin-blue: #89b4fa;
+    --catppuccin-lavender: #b4befe;
+
+    --catppuccin-text: #cdd6f4;
+    --catppuccin-subtext1: #bac2de;
+    --catppuccin-subtext0: #a6adc8;
+    --catppuccin-overlay2: #9399b2;
+    --catppuccin-overlay1: #7f849c;
+    --catppuccin-overlay0: #6c7086;
+    --catppuccin-surface2: #585b70;
+    --catppuccin-surface1: #45475a;
+    --catppuccin-surface0: #313244;
+    --catppuccin-base: #1e1e2e;
+    --catppuccin-mantle: #181825;
+    --catppuccin-crust: #11111b;
+
+    /* GNOME overrides (focused/normal) */
+    --gnome-accent-bg: var(--catppuccin-lavender);
+    --gnome-accent: var(--catppuccin-lavender);
+
+    --gnome-destructive-bg: var(--catppuccin-red);
+    --gnome-success-bg: var(--catppuccin-green);
+    --gnome-warning-bg: var(--catppuccin-yellow);
+    --gnome-error-bg: var(--catppuccin-red);
+    --gnome-toolbar-star-button: var(--catppuccin-yellow);
+
+    /* Window */
+    --gnome-window-background: var(--catppuccin-base);
+    --gnome-window-color: var(--catppuccin-text);
+    --gnome-view-background: var(--catppuccin-mantle);
+    --gnome-sidebar-background: var(--catppuccin-surface0);
+    --gnome-secondary-sidebar-background: var(--catppuccin-surface1);
+
+    /* Card */
+    --gnome-card-background: var(--catppuccin-surface0);
+    --gnome-card-shade-color: transparent;
+
+    /* Menu (search menu → darker) */
+    --gnome-menu-background: var(--catppuccin-mantle);
+
+    /* Header bar (focused → darker, corner fix) */
+    --gnome-headerbar-background: var(--catppuccin-mantle);
+    --gnome-headerbar-shade-color: var(--catppuccin-mantle);
+
+    /* Toolbars */
+    --gnome-toolbar-icon-fill: var(--catppuccin-text);
+
+    /* Tabs (active darker, hover smoother) */
+    --gnome-tabbar-tab-active-background: var(--catppuccin-base);
+    --gnome-tabbar-tab-active-hover-background: var(--catppuccin-surface0);
+    --gnome-tabbar-tab-active-background-contrast: var(--catppuccin-overlay1);
+    --gnome-tabbar-tab-hover-background: var(--catppuccin-surface0);
+
+    /* Identity colors */
+    --gnome-tabbar-identity-color-green: var(--catppuccin-green);
+    --gnome-tabbar-identity-color-yellow: var(--catppuccin-yellow);
+    --gnome-tabbar-identity-color-orange: var(--catppuccin-peach);
+    --gnome-tabbar-identity-color-red: var(--catppuccin-red);
+    --gnome-tabbar-identity-color-purple: var(--catppuccin-mauve);
+
+    /* Private tab text */
+    --gnome-private-wordmark: var(--catppuccin-text);
+    --gnome-private-in-content-page-background: var(--catppuccin-base);
+    --gnome-private-text-primary-color: var(--catppuccin-text);
+
+    /* Inactive window → only slightly lighter (surface0 instead of mantle) */
+    &:-moz-window-inactive {
+      --gnome-window-background: var(--catppuccin-base) !important;
+      --gnome-window-color: var(--catppuccin-text) !important;
+
+      --gnome-view-background: var(--catppuccin-mantle) !important;
+      --gnome-sidebar-background: var(--catppuccin-surface0) !important;
+      --gnome-secondary-sidebar-background: var(--catppuccin-surface0) !important;
+
+      --gnome-card-background: var(--catppuccin-surface0) !important;
+      --gnome-card-shade-color: transparent !important;
+
+      --gnome-menu-background: var(--catppuccin-surface0) !important;
+
+      --gnome-headerbar-background: var(--catppuccin-surface0) !important;
+      --gnome-headerbar-shade-color: var(--catppuccin-surface0) !important;
+
+      --gnome-toolbar-icon-fill: var(--catppuccin-text) !important;
+
+      --gnome-tabbar-tab-active-background: var(--catppuccin-base) !important;
+      --gnome-tabbar-tab-active-hover-background: var(--catppuccin-surface0) !important;
+      --gnome-tabbar-tab-hover-background: var(--catppuccin-overlay0) !important;
+      --gnome-tabbar-tab-active-background-contrast: var(--catppuccin-overlay1) !important;
+    }
+
+    /* Private browsing (accent → mauve, same visual rules) */
+    &[privatebrowsingmode="temporary"] {
+      --gnome-accent: var(--catppuccin-mauve);
+
+      --gnome-headerbar-background: var(--catppuccin-mantle) !important;
+      --gnome-headerbar-shade-color: var(--catppuccin-mantle) !important;
+
+      --gnome-tabbar-tab-active-background: var(--catppuccin-mantle) !important;
+      --gnome-tabbar-tab-active-hover-background: var(--catppuccin-surface0) !important;
+      --gnome-tabbar-tab-hover-background: var(--catppuccin-surface0) !important;
+      --gnome-tabbar-tab-active-background-contrast: var(--catppuccin-overlay1) !important;
+
+      &:-moz-window-inactive {
+        --gnome-window-background: var(--catppuccin-base) !important;
+        --gnome-window-color: var(--catppuccin-text) !important;
+
+        --gnome-view-background: var(--catppuccin-mantle) !important;
+        --gnome-sidebar-background: var(--catppuccin-surface0) !important;
+        --gnome-secondary-sidebar-background: var(--catppuccin-surface0) !important;
+
+        --gnome-card-background: var(--catppuccin-surface0) !important;
+        --gnome-card-shade-color: transparent !important;
+
+        --gnome-menu-background: var(--catppuccin-surface0) !important;
+
+        --gnome-headerbar-background: var(--catppuccin-surface0) !important;
+        --gnome-headerbar-shade-color: var(--catppuccin-surface0) !important;
+
+        --gnome-toolbar-icon-fill: var(--catppuccin-text) !important;
+
+        --gnome-tabbar-tab-active-background: var(--catppuccin-surface0) !important;
+        --gnome-tabbar-tab-active-hover-background: var(--catppuccin-surface0) !important;
+        --gnome-tabbar-tab-hover-background: var(--catppuccin-overlay0) !important;
+        --gnome-tabbar-tab-active-background-contrast: var(--catppuccin-overlay1) !important;
+      }
+    }
+  }
+}
+
+/* Rounded top corners only, no bottom rounding */
+#navigator-toolbox {
+  border-top-left-radius: 8px !important;
+  border-top-right-radius: 8px !important;
+}
+
+/* Tabs toolbar inherits same background, no rounding on right edge */
+#TabsToolbar {
+  border-radius: 0 !important;
+  background-color: var(--gnome-headerbar-background) !important;
+}

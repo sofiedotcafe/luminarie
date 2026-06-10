@@ -1,0 +1,42 @@
+.pre-commit-config.yaml
+.direnv
+result
+result-*
+
+# --- Terraform state ---
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Local Terraform working directory
+.terraform/
+.terraform.lock.hcl
+
+# Terraform plan files
+*.tfplan
+*.tfplan.*
+
+# Sensitive local files
+*.tfvars
+*.tfvars.json
+secrets.auto.tfvars
+*.key
+*.pem
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+
+# Python virtualenvs (if using scripts)
+venv/
+.env/
+
+# Local tooling
+.idea/
+.vscode/
+terraform/machines/tailstack/.system_path
+terraform/machines/tailstack/system_path.txt
+modules/home/desktop/gnome/catppuccin
+modules/nixos/services/klipper
+modules/nixos/services/observability/grafana.nix
