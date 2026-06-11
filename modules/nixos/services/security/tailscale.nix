@@ -1,11 +1,15 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 
 let
-  net = config.modules.nixos.networking;
-  cfg = config.modules.nixos.services.tailscale;
+  cfg = config.modules.nixos.services.security.tailscale;
 in
 {
-  options.modules.nixos.services.tailscale = {
+  options.modules.nixos.services.security.tailscale = {
     enable = lib.mkEnableOption "Tailscale and Headscale";
 
     headscale = {
@@ -35,12 +39,12 @@ in
 
     modules.nixos.networking.containerInterfaces.headscale = {
       zone = "cnt-dmz";
-      id = 20;
+      id = 11;
       proxy = {
-        enable    = true;
+        enable = true;
         subdomain = "tail";
-        port      = cfg.headscale.port;
-        tls       = true;
+        port = cfg.headscale.port;
+        tls = true;
       };
     };
 
@@ -73,7 +77,7 @@ in
           enable = true;
 
           settings = {
-            server_url  = "https://tail.${cfg.headscale.domain}";
+            server_url = "https://tail.${cfg.headscale.domain}";
             listen_addr = "0.0.0.0:${toString cfg.headscale.port}";
 
             database = {
@@ -87,14 +91,19 @@ in
             dns.nameservers.global = [ config.modules.nixos.networking.zones.svc.gateway ];
 
             oidc = {
-              issuer        = "https://noseprint.sofie.cafe/application/o/headscale/";
-              client_id     = "HAuAwiKwBqE8VZfIZnptkJ8arghphUTYQFDKs0yn";
+              issuer = "https://noseprint.sofie.cafe/application/o/headscale/";
+              client_id = "HAuAwiKwBqE8VZfIZnptkJ8arghphUTYQFDKs0yn";
               client_secret_path = "${config.sops.secrets."headscale/client_secret".path}";
 
-              scope         = [ "openid" "profile" "email" "groups" ];
+              scope = [
+                "openid"
+                "profile"
+                "email"
+                "groups"
+              ];
               allowed_groups = [
                 "authentik Admins"
-                ];
+              ];
 
               pkce.enable = true;
             };
@@ -105,7 +114,7 @@ in
 
     services.tailscale = {
       enable = true;
-      
+
       authKeyFile = "${config.sops.secrets."headscale/secret_key".path}";
       openFirewall = true;
 

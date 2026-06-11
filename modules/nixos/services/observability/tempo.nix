@@ -1,4 +1,9 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 
 let
   cfg = config.modules.nixos.services.observability.tempo;
@@ -28,7 +33,7 @@ in
 
     modules.nixos.networking.containerInterfaces.tempo = {
       zone = "cnt";
-      id = 7;
+      id = 33;
       proxy = {
         enable = true;
         port = cfg.port;
@@ -41,15 +46,26 @@ in
       autoStart = true;
 
       forwardPorts = [
-        { containerPort = cfg.port; hostPort = cfg.port; protocol = "tcp"; }
-        { containerPort = cfg.otlpPort; hostPort = cfg.otlpPort; protocol = "tcp"; }
+        {
+          containerPort = cfg.port;
+          hostPort = cfg.port;
+          protocol = "tcp";
+        }
+        {
+          containerPort = cfg.otlpPort;
+          hostPort = cfg.otlpPort;
+          protocol = "tcp";
+        }
       ];
 
       config = {
         imports = [ inputs.nix-topology.nixosModules.default ];
         system.stateVersion = "26.05";
 
-        networking.firewall.allowedTCPPorts = [ cfg.port cfg.otlpPort ];
+        networking.firewall.allowedTCPPorts = [
+          cfg.port
+          cfg.otlpPort
+        ];
 
         services.tempo = {
           enable = true;
@@ -66,7 +82,7 @@ in
             };
 
             ingester = {
-              max_block_bytes = 100000000;   # 100MB
+              max_block_bytes = 100000000; # 100MB
               max_block_duration = "5m";
             };
 

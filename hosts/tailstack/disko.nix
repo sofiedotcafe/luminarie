@@ -8,17 +8,22 @@ let
   luksDevices =
     let
       raw = flatten (
-        mapAttrsToList (_: disk:
-          let parts = disk.content.partitions or { };
-          in mapAttrsToList (_: part: part.content.name or null) parts
+        mapAttrsToList (
+          _: disk:
+          let
+            parts = disk.content.partitions or { };
+          in
+          mapAttrsToList (_: part: part.content.name or null) parts
         ) (diskoCfg.disk or { })
       );
-    in filter (x: x != null) raw;
+    in
+    filter (x: x != null) raw;
 
 in
 {
   boot.zfs.devNodes = "/dev/disk/by-id";
   boot.zfs.forceImportAll = true;
+  boot.zfs.forceImportRoot = true;
   boot.kernel.sysctl."vfs.zfs.arc_max" = 224 * 1024 * 1024 * 1024;
 
   fileSystems."/persistent".neededForBoot = true;
@@ -54,7 +59,10 @@ in
               type = "filesystem";
               format = "vfat";
               mountpoint = "/boot";
-              mountOptions = [ "umask=0077" "shortname=winnt" ];
+              mountOptions = [
+                "umask=0077"
+                "shortname=winnt"
+              ];
             };
           };
         };
@@ -215,25 +223,37 @@ in
         datasets = {
           "local" = {
             type = "zfs_fs";
-            options = { compression = "zstd"; atime = "off"; };
+            options = {
+              compression = "zstd";
+              atime = "off";
+            };
           };
 
           "local/root" = {
             type = "zfs_fs";
             mountpoint = "/";
-            options = { compression = "zstd"; atime = "off"; };
+            options = {
+              compression = "zstd";
+              atime = "off";
+            };
           };
 
           "nix" = {
             type = "zfs_fs";
             mountpoint = "/nix";
-            options = { compression = "zstd"; atime = "off"; };
+            options = {
+              compression = "zstd";
+              atime = "off";
+            };
           };
 
           "persistent" = {
             type = "zfs_fs";
             mountpoint = "/persistent";
-            options = { compression = "zstd"; atime = "off"; };
+            options = {
+              compression = "zstd";
+              atime = "off";
+            };
           };
 
           "reserved" = {

@@ -1,12 +1,11 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
 let
-  cfg = config.modules.nixos.services.fail2ban;
+  cfg = config.modules.nixos.services.observability.fail2ban;
 
   jails = {
     sshd = {
@@ -99,12 +98,15 @@ let
 
 in
 {
-  options.modules.nixos.services.fail2ban = {
+  options.modules.nixos.services.observability.fail2ban = {
     enable = lib.mkEnableOption "Fail2ban intrusion prevention for a Traefik DMZ host";
 
     ignoreIPs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "127.0.0.1/8" "10.0.0.0/8" ];
+      default = [
+        "127.0.0.1/8"
+        "10.0.0.0/8"
+      ];
     };
 
     banaction = lib.mkOption {
@@ -113,18 +115,26 @@ in
     };
 
     jails = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule {
-        options = {
-          enable = lib.mkOption { type = lib.types.bool; default = true; };
-          settings = lib.mkOption { type = lib.types.attrs; default = {}; };
-        };
-      });
-      default = {};
+      type = lib.types.attrsOf (
+        lib.types.submodule {
+          options = {
+            enable = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+            };
+            settings = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
+          };
+        }
+      );
+      default = { };
     };
 
     daemonSettings = lib.mkOption {
       type = lib.types.attrs;
-      default = {};
+      default = { };
     };
   };
 
@@ -148,41 +158,37 @@ in
         };
       } cfg.daemonSettings;
 
-      jails =
-        lib.mapAttrs (_: jail: {
-          enabled = jail.enabled;
-          settings = jail.settings;
-        })
-        (lib.recursiveUpdate jails cfg.jails);
+      jails = lib.mapAttrs (_: jail: {
+        enabled = jail.enabled;
+        settings = jail.settings;
+      }) (lib.recursiveUpdate jails cfg.jails);
     };
 
-    # Host-side directories only
     systemd.tmpfiles.rules = [
       "d /var/log/traefik 0755 root root -"
       "f /var/log/fail2ban.log 0640 root root -"
     ];
 
-    # Custom filters installed correctly
     environment.etc = {
       "fail2ban/filter.d/traefik-auth.conf".text = ''
-[Definition]
-failregex = ^<HOST> .* "(GET|POST).*" 401
-'';
+        [Definition]
+        failregex = ^<HOST> .* "(GET|POST).*" 401
+      '';
 
       "fail2ban/filter.d/traefik-404.conf".text = ''
-[Definition]
-failregex = ^<HOST> .* "(GET|POST).*" 404
-'';
+        [Definition]
+        failregex = ^<HOST> .* "(GET|POST).*" 404
+      '';
 
       "fail2ban/filter.d/traefik-limit-req.conf".text = ''
-[Definition]
-failregex = ^.*client_ip=<HOST>.*rate limit exceeded.*
-'';
+        [Definition]
+        failregex = ^.*client_ip=<HOST>.*rate limit exceeded.*
+      '';
 
       "fail2ban/filter.d/letsencrypt.conf".text = ''
-[Definition]
-failregex = ^.*client_ip=<HOST>.*(Unable to obtain ACME certificate|error: one or more domains had a problem).*
-'';
+        [Definition]
+        failregex = ^.*client_ip=<HOST>.*(Unable to obtain ACME certificate|error: one or more domains had a problem).*
+      '';
     };
   };
 }

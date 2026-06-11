@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   inputs,
   ...
 }:
@@ -14,7 +13,6 @@ in
   options.modules.nixos.services.observability.prometheus = {
     enable = lib.mkEnableOption "Prometheus";
 
-    # Forward the networking container address
     address = lib.mkOption {
       type = lib.types.str;
       readOnly = true;
@@ -30,7 +28,7 @@ in
   config = lib.mkIf cfg.enable {
     modules.nixos.networking.containerInterfaces.prometheus = {
       zone = "cnt";
-      id = 3;
+      id = 31;
       proxy = {
         enable = true;
         port = cfg.port;
@@ -66,7 +64,7 @@ in
       };
     };
 
-   modules.nixos.services.observability.grafana.datasources = [
+    modules.nixos.services.observability.grafana.datasources = [
       {
         name = "Prometheus";
         type = "prometheus";
