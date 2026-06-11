@@ -2,14 +2,13 @@
   config,
   inputs,
   pkgs,
-  lib,
   ...
 }:
 
 {
   topology.self =
     let
-      inherit (config.lib.topology) mkSwitch mkConnection;
+      inherit (config.lib.topology) mkSwitch; # mkConnection
       mkNixos = name: args: mkSwitch name (args // { deviceType = "nixos"; });
     in
     mkNixos "Tailstack" {
@@ -93,13 +92,17 @@
     };
 
     services = {
-      authentik = {
-        enable = true;
-        email = {
-          host = "smtp.protonmail.ch";
-          username = "no-reply@sofie.cafe";
-          from = "no-reply@sofie.cafe";
+      security = {
+        authentik = {
+          enable = true;
+          email = {
+            host = "smtp.protonmail.ch";
+            username = "no-reply@sofie.cafe";
+            from = "no-reply@sofie.cafe";
+          };
         };
+        tailscale.enable = true;
+        vault.enable = true;
       };
 
       traefik = {
@@ -109,9 +112,6 @@
         acme.email = "sofie.halenius@sofie.cafe";
       };
 
-      tailscale.enable = true;
-      fail2ban.enable = true;
-
       observability = {
         grafana.enable = true;
         prometheus.enable = true;
@@ -119,6 +119,8 @@
         loki.enable = true;
         alloy.enable = true;
         tempo.enable = true;
+
+        fail2ban.enable = true;
 
         exporters = {
           node.enable = true;

@@ -2,9 +2,7 @@
   imports = [
     ./klipper
     ./observability
-    ./authentik.nix
+    ./security
     ./traefik.nix
-    ./tailscale.nix
-    ./fail2ban.nix
   ];
 }

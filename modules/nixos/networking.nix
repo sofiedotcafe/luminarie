@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 
@@ -331,15 +330,16 @@ in
       systemd.network.wait-online.enable = false;
       services.resolved.enable = false;
 
-      services.dnscrypt-proxy2 = {
+      services.dnscrypt-proxy = {
         enable = true;
 
         settings = {
-          listen_addresses =
-            [ "127.0.0.1:53" ]
-            ++ map (z: "${z.gateway}:53") (lib.attrValues cfg.zones);
+          listen_addresses = [ "127.0.0.1:53" ] ++ map (z: "${z.gateway}:53") (lib.attrValues cfg.zones);
 
-          server_names = [ "cloudflare" "quad9-dnscrypt-ip4-filter-pri" ];
+          server_names = [
+            "cloudflare"
+            "quad9-dnscrypt-ip4-filter-pri"
+          ];
 
           forwarding_rules = builtins.toFile "forwarding-rules" ''
             lan ${wanZone.gateway}

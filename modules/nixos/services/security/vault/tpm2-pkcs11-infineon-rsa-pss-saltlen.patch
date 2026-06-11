@@ -1,0 +1,145 @@
+diff --git a/src/lib/mech.c b/src/lib/mech.c
+index 7e4f363..8c15f64 100644
+--- a/src/lib/mech.c
++++ b/src/lib/mech.c
+@@ -229,6 +229,14 @@ static mdetail_entry *mlookup(mdetail *details, CK_MECHANISM_TYPE t) {
+     return NULL;
+ }
+ 
++/*
++ * Replace the existing mech_init implementation with this tolerant version.
++ * - Logs clearly at each decision point (LOGV/LOGW/LOGE).
++ * - Treats TPM parameter/type failures (manifested as CKR_GENERAL_ERROR from
++ *   the tpm probing helpers) as "unsupported" for that specific item and
++ *   continues probing instead of aborting initialization.
++ * - Still treats truly unexpected return values as fatal and returns them.
++ */
+ static CK_RV mech_init(tpm_ctx *tctx, mdetail *m) {
+ 
+     /*
+@@ -238,72 +246,109 @@ static CK_RV mech_init(tpm_ctx *tctx, mdetail *m) {
+     CK_ULONG tpm_mechs_len = ARRAY_LEN(tpm_mechs);
+     CK_RV rv = tpm2_getmechanisms(tctx, tpm_mechs, &tpm_mechs_len);
+     if (rv != CKR_OK) {
++        LOGE("mech_init: tpm2_getmechanisms failed: 0x%lx", rv);
+         return rv;
+     }
+ 
++    /* Defensive: ensure our template is large enough */
+     assert(tpm_mechs_len <= m->mdetail_len);
+ 
+     /*
+-     * Update whether or not the TPM supports it or not
+-     * and any other metadata
++     * Mark TPM-supported mechanisms in the table
+      */
+     CK_ULONG i;
+-    for (i=0; i < tpm_mechs_len; i++) {
++    for (i = 0; i < tpm_mechs_len; i++) {
+         CK_MECHANISM_TYPE t = tpm_mechs[i];
+-        mdetail_entry *d = NULL;
+         CK_ULONG j;
+-        for (j=0; j < m->mdetail_len; j++) {
+-            d = &m->mech_entries[j];
++        for (j = 0; j < m->mdetail_len; j++) {
++            mdetail_entry *d = &m->mech_entries[j];
+             if (d->type == t) {
+                 d->flags |= mf_tpm_supported;
++                LOGV("mech_init: mechanism 0x%lx marked mf_tpm_supported", t);
+                 break;
+             }
+         }
+     }
+ 
++    /*
++     * If RSA keygen is present, probe supported RSA key sizes.
++     * Treat CKR_MECHANISM_INVALID as "not supported" and continue.
++     * Treat CKR_GENERAL_ERROR (parameter/type error from TPM) as non-fatal:
++     * log a warning and treat that size as unsupported, continue probing.
++     * Any other unexpected rv is fatal.
++     */
+     mdetail_entry *d = mlookup(m, CKM_RSA_PKCS_KEY_PAIR_GEN);
+     if (d) {
+-        /* get supported RSA key bit sizes */
+-        for (i=0; i < m->rsa_detail_len; i++) {
+-            rv = tpm_is_rsa_keysize_supported(tctx, m->rsa_entries[i].bits);
++        for (i = 0; i < m->rsa_detail_len; i++) {
++            CK_ULONG bits = m->rsa_entries[i].bits;
++            rv = tpm_is_rsa_keysize_supported(tctx, bits);
++
+             if (rv == CKR_MECHANISM_INVALID) {
++                /* TPM explicitly says this keysize is not supported */
++                LOGV("mech_init: RSA %lu bits: CKR_MECHANISM_INVALID (unsupported)", bits);
+                 continue;
+             }
+ 
+-            if(rv == CKR_OK) {
++            if (rv == CKR_OK) {
+                 m->rsa_entries[i].supported = true;
++                LOGV("mech_init: RSA %lu bits: supported", bits);
++                continue;
++            }
++
++            if (rv == CKR_GENERAL_ERROR) {
++                /* Parameter/type error from TPM while testing this keysize.
++                 * Treat as unsupported for this keysize but continue probing.
++                 */
++                LOGW("mech_init: tpm_is_rsa_keysize_supported returned CKR_GENERAL_ERROR for %lu bits; treating as unsupported", bits);
+                 continue;
+             }
+ 
++            /* Unexpected fatal error */
++            LOGE("mech_init: tpm_is_rsa_keysize_supported returned unexpected rv 0x%lx for %lu bits", rv, bits);
+             return rv;
+         }
+     } else {
+-        LOGV("RSA Keygen not detected");
++        LOGV("mech_init: RSA Keygen not detected in mech table");
+     }
+ 
++    /*
++     * If EC keygen is present, probe supported ECC curves.
++     * Same tolerant handling as RSA sizes above.
++     */
+     d = mlookup(m, CKM_EC_KEY_PAIR_GEN);
+     if (d) {
+-        /* get supported ECC curves */
+-        for (i=0; i < m->nid_detail_len; i++) {
+-            rv = tpm_is_ecc_curve_supported(tctx, m->nid_entries[i].nid);
++        for (i = 0; i < m->nid_detail_len; i++) {
++            int nid = m->nid_entries[i].nid;
++            rv = tpm_is_ecc_curve_supported(tctx, nid);
++
+             if (rv == CKR_MECHANISM_INVALID) {
++                LOGV("mech_init: ECC nid %d: CKR_MECHANISM_INVALID (unsupported)", nid);
+                 continue;
+             }
+ 
+-            if(rv == CKR_OK) {
++            if (rv == CKR_OK) {
+                 m->nid_entries[i].supported = true;
++                LOGV("mech_init: ECC nid %d: supported", nid);
+                 continue;
+             }
+ 
++            if (rv == CKR_GENERAL_ERROR) {
++                LOGW("mech_init: tpm_is_ecc_curve_supported returned CKR_GENERAL_ERROR for nid %d; treating as unsupported", nid);
++                continue;
++            }
++
++            LOGE("mech_init: tpm_is_ecc_curve_supported returned unexpected rv 0x%lx for nid %d", rv, nid);
+             return rv;
+         }
+     } else {
+-        LOGV("EC Keygen not detected");
++        LOGV("mech_init: EC Keygen not detected in mech table");
+     }
+ 
++    LOGV("mech_init: completed successfully (mechanism table populated)");
+     return CKR_OK;
+ }
+ 
++
+ void mdetail_free(mdetail **mdtl) {
+     if (!mdtl || !*mdtl) {
+         return;

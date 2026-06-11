@@ -50,6 +50,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    systemd-vaultd = {
+      url = "github:numtide/systemd-vaultd";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    terranix = {
+      url = "github:terranix/terranix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     authentik-nix = {
       url = "github:nix-community/authentik-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -73,9 +81,5 @@
 
     arkenfox.url = "github:dwarfmaster/arkenfox-nixos";
     nix-citizen.url = "github:LovingMelody/nix-citizen";
-    steam-presence = {
-      url = "github:JustTemmie/steam-presence";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 }

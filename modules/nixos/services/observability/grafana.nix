@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgs,
   inputs,
   ...
 }:
@@ -33,7 +32,7 @@ in
   config = lib.mkIf cfg.enable {
     modules.nixos.networking.containerInterfaces.grafana = {
       zone = "cnt";
-      id = 2;
+      id = 30;
       proxy = {
         enable = true;
         port = cfg.port;

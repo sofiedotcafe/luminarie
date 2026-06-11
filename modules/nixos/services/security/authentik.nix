@@ -1,10 +1,15 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 
 let
-  cfg = config.modules.nixos.services.authentik;
+  cfg = config.modules.nixos.services.security.authentik;
 in
 {
-  options.modules.nixos.services.authentik = {
+  options.modules.nixos.services.security.authentik = {
     enable = lib.mkEnableOption "Authentik IdP";
 
     port = lib.mkOption {
@@ -38,10 +43,10 @@ in
           };
         };
       };
-      default = {};
+      default = { };
       description = "Minimal SMTP configuration for Authentik";
     };
-
+    networking.firewall.allowedTCPPorts = [ cfg.port ];
   };
 
   config = lib.mkIf cfg.enable {
@@ -68,7 +73,11 @@ in
       autoStart = true;
 
       forwardPorts = [
-        { containerPort = cfg.port; hostPort = cfg.port; protocol = "tcp"; }
+        {
+          containerPort = cfg.port;
+          hostPort = cfg.port;
+          protocol = "tcp";
+        }
       ];
 
       # Mount the environment file
@@ -80,7 +89,7 @@ in
       config = {
         system.stateVersion = "26.05";
 
-        imports = [ 
+        imports = [
           inputs.nix-topology.nixosModules.default
           inputs.authentik-nix.nixosModules.default
         ];
@@ -89,12 +98,15 @@ in
 
         services.authentik = {
           enable = true;
-          # The environmentFile needs to be on the target host!
-          # Best use something like sops-nix or agenix to manage it
           environmentFile = config.sops.templates."authentik-env".path;
           settings = {
             email = {
-              inherit (cfg.email) host port username from;
+              inherit (cfg.email)
+                host
+                port
+                username
+                from
+                ;
               use_tls = true;
               use_ssl = false;
             };
