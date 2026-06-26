@@ -76,7 +76,7 @@ in
 
           {
             home-manager = {
-              # useGlobalPkgs = true;
+              useGlobalPkgs = true;
               useUserPackages = true;
 
               extraSpecialArgs = { inherit inputs sofLib; };

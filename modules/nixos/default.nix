@@ -7,5 +7,6 @@
     ./services
     ./desktop
     ./profile
+    ./programs
   ];
 }

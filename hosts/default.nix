@@ -12,6 +12,7 @@ let
     disko.nixosModules.disko
     sops-nix.nixosModules.sops
     nix-topology.nixosModules.default
+    nixvim.nixosModules.nixvim
   ];
 
   homeModules = with inputs; [

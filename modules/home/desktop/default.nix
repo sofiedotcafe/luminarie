@@ -23,7 +23,7 @@ with lib;
         accent = mkOption {
           type = types.str;
           description = "The accent of Catppuccin to use.";
-          default = "lavender";
+          default = "pink";
         };
       };
 

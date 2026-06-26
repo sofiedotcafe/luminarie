@@ -81,7 +81,7 @@ in
       };
       accent = mkOption {
         type = types.str;
-        default = "lavender";
+        default = "pink";
         description = "Catppuccin accent.";
       };
     };
@@ -172,7 +172,6 @@ in
         enable = true;
         extraGSettingsOverrides = ''
           [org.gnome.mutter]
-          experimental-features=['scale-monitor-framebuffer', 'variable-refresh-rate', 'xwayland-native-scaling']
           check-alive-timeout=${lib.gvariant.mkUint32 (15 * 1000)}
         '';
         extraGSettingsOverridePackages = [ pkgs.mutter ];

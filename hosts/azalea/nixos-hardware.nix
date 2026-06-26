@@ -12,16 +12,6 @@
     kernelPackages = pkgs.linuxPackages_latest;
     kernelModules = [ "kvm-amd" ];
 
-    kernelPatches = [
-      {
-        name = "mt7922-func-ctrl-fix";
-        patch = pkgs.fetchpatch {
-          url = "https://lore.kernel.org/linux-mediatek/20260514-bluetooh-fix-mt7922-v1-1-499c878af1e5@zohomail.in/raw";
-          hash = "sha256-JHUGOYK4Wk3VIIl3nM73YYe+odrTOf5tcLg7ZjGRYGs=";
-        };
-      }
-    ];
-
     initrd = {
       systemd = {
         enable = true;

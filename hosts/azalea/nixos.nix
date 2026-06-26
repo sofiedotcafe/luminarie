@@ -11,6 +11,7 @@
     };
     desktop.gnome.enable = true;
     desktop.gnome.shell.catppuccin.enable = true;
+    programs.neovim.enable = true;
   };
 
   users.users = {
