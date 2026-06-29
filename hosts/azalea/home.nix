@@ -19,6 +19,7 @@
       git.enable = true;
       vscode.enable = true;
       vesktop.enable = true;
+      tmux.enable = true;
     };
 
     shell = {

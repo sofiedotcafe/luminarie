@@ -76,11 +76,27 @@ in
         vencord = old.vencord.overrideAttrs (
           prev:
           let
-            customSounds = pkgs.fetchFromGitHub {
-              owner = "ScattrdBlade";
-              repo = "customSounds";
-              rev = "main";
-              hash = "sha256-05YlB5AmUJLCJPyXDamxEfDRFom4xtSNNuAohBC9vH8=";
+            customSounds = pkgs.stdenv.mkDerivation {
+              name = "customSounds";
+              src = pkgs.fetchFromGitHub {
+                owner = "ScattrdBlade";
+                repo = "customSounds";
+                rev = "main";
+                hash = "sha256-05YlB5AmUJLCJPyXDamxEfDRFom4xtSNNuAohBC9vH8=";
+              };
+
+              patches = [
+                (pkgs.fetchpatch {
+                  url = "https://patch-diff.githubusercontent.com/raw/ScattrdBlade/customSounds/pull/24.patch";
+                  hash = "sha256-2sEzJuuPBh1km3Zu7SO6Schopa5vd0P7SdLaRP/Lgvk=";
+                  name = "patch-24";
+                })
+              ];
+
+              installPhase = ''
+                mkdir -p $out
+                cp -r . $out
+              '';
             };
           in
           {

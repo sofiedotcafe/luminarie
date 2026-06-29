@@ -27,7 +27,8 @@ in
 
             let
               variables = lib.mapAttrs' (name: value: nameValuePair "MOMMY_${lib.toUpper name}" value) {
-                sweetie = "Sofie";
+                sweetie = "puppy";
+                caregiver = "big sis";
                 color = "";
               };
               configFile = pkgs.writeText "mommy-config" (toShellVars variables);

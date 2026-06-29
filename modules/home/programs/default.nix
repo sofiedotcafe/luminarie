@@ -4,5 +4,6 @@
     ./vscode
     ./git
     ./vesktop
+    ./tmux
   ];
 }
