@@ -13,7 +13,8 @@
       overlayAttrs = with pkgs; {
         nix = lixPackageSets.git.lix;
 
-        inherit (inputs.qt-decorations.packages.${system}) qcatppuccindecorations;
+        pnpm_10_29_2 = pkgs.pnpm_10;
+
         inherit (inputs.nix-citizen.packages.${system}) rsi-launcher;
 
         gnome-shell = pkgs.gnome-shell.overrideAttrs (prev: {

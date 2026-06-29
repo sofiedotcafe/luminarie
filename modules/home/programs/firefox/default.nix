@@ -59,6 +59,7 @@ in
     programs.firefox = {
       enable = true;
       inherit (cfg) package;
+      configPath = "${config.xdg.configHome}/mozilla/firefox";
       policies = {
         # Documentation: https://mozilla.github.io/policy-templates/
 

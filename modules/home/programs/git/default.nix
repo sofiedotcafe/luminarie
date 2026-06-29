@@ -15,8 +15,19 @@ in
     programs.git = {
       enable = true;
 
-      userName = "sofiedotcafe";
-      userEmail = "sofie.halenius@sofie.cafe";
+      settings = {
+        user = {
+          name = "sofiedotcafe";
+          email = "sofie.halenius@sofie.cafe";
+        };
+      };
+    };
+
+    programs.gh = {
+      enable = true;
+      gitCredentialHelper = {
+        enable = true;
+      };
     };
   };
 }

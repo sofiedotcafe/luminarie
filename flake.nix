@@ -40,11 +40,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixvim = {
-      url = "github:nix-community/nixvim";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     lanzaboote = {
       url = "github:nix-community/lanzaboote/master";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -60,17 +55,24 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixvim = {
+      url = "github:nix-community/nixvim";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     nix-topology.url = "github:oddlama/nix-topology";
 
     impermanence.url = "github:nix-community/impermanence";
 
-    disko.url = "github:nix-community/disko/master";
-    disko.inputs.nixpkgs.follows = "nixpkgs";
+    disko = {
+      url = "github:nix-community/disko/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     catppuccin.url = "github:catppuccin/nix";
 
     qt-decorations = {
-      url = "github:sofiedotcafe/qt-decorations";
+      url = "github:sofiedotcafe/qt-decorations/rust";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -78,9 +80,5 @@
 
     arkenfox.url = "github:dwarfmaster/arkenfox-nixos";
     nix-citizen.url = "github:LovingMelody/nix-citizen";
-    steam-presence = {
-      url = "github:JustTemmie/steam-presence";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 }

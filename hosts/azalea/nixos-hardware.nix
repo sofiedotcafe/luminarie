@@ -10,6 +10,7 @@
 
   boot = {
     kernelPackages = pkgs.linuxPackages_latest;
+
     kernelModules = [ "kvm-amd" ];
 
     initrd = {
@@ -89,7 +90,6 @@
   };
 
   services.fwupd.enable = true;
-
   environment.systemPackages = [
     pkgs.git
     pkgs.sbctl
@@ -106,5 +106,4 @@
 
   networking.useDHCP = lib.mkDefault true;
   networking.networkmanager.enable = true;
-
 }

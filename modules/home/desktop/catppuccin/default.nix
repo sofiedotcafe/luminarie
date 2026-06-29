@@ -11,6 +11,7 @@ in
   config = mkIf cfg.enable {
     catppuccin = {
       enable = true;
+      autoEnable = false;
       inherit (cfg) flavor accent;
     };
   };

@@ -35,8 +35,17 @@
     obsidian
     anki
     zotero
-    (rsi-launcher.override { useUmu = true; })
+    telegram-desktop
     (signal-desktop.override { theme = "${pkgs.catppuccin-signal.override { variant = "mocha"; }}"; })
+    (rsi-launcher.override {
+      useUmu = true;
+      gameScopeEnable = true;
+      gameScopeArgs = [
+        "--force-grab-cursor"
+        "-W 2560 -H 1440"
+      ];
+      preCommands = "export XKB_DEFAULT_LAYOUT=fi";
+    })
     (prismlauncher.override {
       additionalLibs = with pkgs; [
         freetype
