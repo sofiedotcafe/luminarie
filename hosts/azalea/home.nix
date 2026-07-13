@@ -19,7 +19,6 @@
       git.enable = true;
       vscode.enable = true;
       vesktop.enable = true;
-      tmux.enable = true;
     };
 
     shell = {
@@ -35,20 +34,12 @@
     obsidian
     anki
     zotero
-    telegram-desktop
+    (rsi-launcher.override { useUmu = true; })
     (signal-desktop.override { theme = "${pkgs.catppuccin-signal.override { variant = "mocha"; }}"; })
-    (rsi-launcher.override {
-      useUmu = true;
-      gameScopeEnable = true;
-      gameScopeArgs = [
-        "--force-grab-cursor"
-        "-W 2560 -H 1440"
-      ];
-      preCommands = "export XKB_DEFAULT_LAYOUT=fi";
-    })
     (prismlauncher.override {
       additionalLibs = with pkgs; [
         freetype
+        libxrender
         fontconfig
         noto-fonts
         dejavu_fonts
