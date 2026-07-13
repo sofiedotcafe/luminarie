@@ -6,5 +6,6 @@
     ./loki.nix
     ./alloy.nix
     ./tempo.nix
+    ./fail2ban.nix
   ];
 }

@@ -1,4 +1,9 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 
 let
   cfg = config.modules.nixos.services.observability.loki;
@@ -23,7 +28,7 @@ in
 
     modules.nixos.networking.containerInterfaces.loki = {
       zone = "cnt";
-      id = 6;
+      id = 32;
       proxy = {
         enable = true;
         port = cfg.port;
@@ -36,7 +41,11 @@ in
       autoStart = true;
 
       forwardPorts = [
-        { containerPort = cfg.port; hostPort = cfg.port; protocol = "tcp"; }
+        {
+          containerPort = cfg.port;
+          hostPort = cfg.port;
+          protocol = "tcp";
+        }
       ];
 
       config = {
@@ -70,16 +79,18 @@ in
               working_directory = "/var/lib/loki/compactor";
             };
 
-            schema_config.configs = [{
-              from = "2024-01-01";
-              store = "tsdb";
-              object_store = "filesystem";
-              schema = "v13";
-              index = {
-                prefix = "index_";
-                period = "24h";
-              };
-            }];
+            schema_config.configs = [
+              {
+                from = "2024-01-01";
+                store = "tsdb";
+                object_store = "filesystem";
+                schema = "v13";
+                index = {
+                  prefix = "index_";
+                  period = "24h";
+                };
+              }
+            ];
 
             storage_config = {
               tsdb_shipper = {
