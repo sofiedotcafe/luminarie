@@ -37,13 +37,16 @@
     (rsi-launcher.override { useUmu = true; })
     (signal-desktop.override { theme = "${pkgs.catppuccin-signal.override { variant = "mocha"; }}"; })
     (prismlauncher.override {
-      additionalLibs = with pkgs; [
-        freetype
-        libxrender
-        fontconfig
-        noto-fonts
-        dejavu_fonts
-      ];
+      additionalLibs =
+        with pkgs;
+        [
+          noto-fonts
+          dejavu_fonts
+
+          pkgs.curl
+          pkgs.openssl
+        ]
+        ++ (appimageTools.defaultFhsEnvArgs.multiPkgs pkgs);
       jdks = with pkgs; [
         jdk25
         jdk21

@@ -1,50 +1,58 @@
-{ config, lib, inputs, pkgs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 
 let
   cfg = config.modules.nixos.services.traefik;
   net = config.modules.nixos.networking;
 
-  enabled =
-    lib.filterAttrs (_: iface:
-      iface.proxy != null &&
-      iface.proxy.enable &&
-      iface.proxy.subdomain != null &&
-      iface.proxy.port != null
-    ) net.containerInterfaces;
+  allProxies = lib.concatLists (
+    lib.mapAttrsToList (
+      netName: iface:
+      map
+        (
+          p:
+          p
+          // {
+            containerName = netName;
+            ip = iface.address;
+            zone = iface.zone;
+          }
+        )
+        (
+          lib.filter (p: p != null && (p.enable or false) && p.subdomain != null && p.port != null) (
+            lib.attrValues iface.proxy
+          )
+        )
+    ) net.containerInterfaces
+  );
 
-  isDmz = iface: lib.hasInfix "dmz" (lib.toLower iface.zone);
+  isDmz = ifaceZone: lib.hasInfix "dmz" (lib.toLower ifaceZone);
 
-  enabledInternal = lib.filterAttrs (_: iface: !isDmz iface) enabled;
-  enabledDmz      = lib.filterAttrs (_: iface:  isDmz iface) enabled;
+  enabledInternal = builtins.filter (p: !isDmz p.zone) allProxies;
+  enabledDmz = builtins.filter (p: isDmz p.zone) allProxies;
 
-  prefixFromAddr = addr:
-    let parts = lib.take 3 (lib.splitString "." addr);
-    in builtins.concatStringsSep "." parts + ".";
+  domainFor = p: if isDmz p.zone then cfg.externalDomain else cfg.internalDomain;
 
-  containerIp = name: iface:
-    let
-      zone = net.zones.${iface.zone};
-      base = prefixFromAddr zone.addr;
-    in "${base}${toString iface.id}";
-
-  domainFor = iface:
-    if isDmz iface
-    then cfg.externalDomain
-    else cfg.internalDomain;
-
-  mkService = target: name: iface: {
-    "${iface.proxy.subdomain}".loadBalancer.servers = [
-      { url = "http://${containerIp name iface}:${toString iface.proxy.port}"; }
-    ];
+  mkHttpService = p: {
+    "${p.subdomain}" = {
+      loadBalancer = {
+        servers = [ { url = "${p.protocol}://${p.ip}:${toString p.port}"; } ];
+        serversTransport = lib.optionalString p.tls "node-transport";
+      };
+    };
   };
 
-  mkRouter = target: name: iface: {
-    "${iface.proxy.subdomain}" = {
-      rule = "Host(`${iface.proxy.subdomain}.${domainFor iface}`)";
+  mkHttpRouter = target: p: {
+    "${p.subdomain}" = {
+      rule = "Host(`${p.subdomain}.${domainFor p}`)";
       entryPoints = [ "websecure" ];
-      service = iface.proxy.subdomain;
+      service = p.subdomain;
 
-      tls = lib.mkIf iface.proxy.tls {
+      tls = lib.mkIf p.tls {
         certResolver = target;
       };
 
@@ -86,39 +94,66 @@ in
       id = 10;
     };
 
-    networking.firewall.allowedTCPPorts = [ 80 443 ];
+    networking.firewall.allowedTCPPorts = [
+      80
+      443
+    ];
 
-    # Host-side dirs only, root-owned
     systemd.tmpfiles.rules = [
       "d /var/acme 0755 root root -"
       "d /var/log/traefik 0755 root root -"
+      "d /etc/ssl 0755 root root -"
     ];
 
-    sops.templates."traefik-env".content =
-      ''CF_DNS_API_TOKEN="${config.sops.placeholder."traefik/cloudflare_acme_token"}"'';
+    systemd.services."container@traefik" = {
+      after = [ "container@vault.service" ];
+      requires = [ "container@vault.service" ];
+    };
+
+    systemd.services."container@traefik-dmz" = {
+      after = [ "container@vault.service" ];
+      requires = [ "container@vault.service" ];
+    };
 
     containers.traefik = {
       autoStart = true;
       privateNetwork = true;
       hostBridge = net.zones.svc.bridge;
 
-      bindMounts.${cfg.acme.storage} = {
-        hostPath = cfg.acme.storage;
-        isReadOnly = false;
+      bindMounts = {
+        ${cfg.acme.storage} = {
+          hostPath = cfg.acme.storage;
+          isReadOnly = false;
+        };
+        "/var/log/traefik" = {
+          hostPath = "/var/log/traefik";
+          isReadOnly = false;
+        };
+        "/etc/ssl/certs/node-ca.crt" = {
+          hostPath = "/etc/ssl/node-ca.crt";
+          isReadOnly = true;
+        };
+        "/etc/ssl/certs/node-client.crt" = {
+          hostPath = "/etc/ssl/node-client.crt";
+          isReadOnly = true;
+        };
+        "/etc/ssl/private/node-client.key" = {
+          hostPath = "/etc/ssl/node-client.key";
+          isReadOnly = true;
+        };
       };
 
-      bindMounts.${config.sops.templates."traefik-env".path} = {
-        hostPath = config.sops.templates."traefik-env".path;
-        isReadOnly = true;
-      };
+      config = { ... }: {
+        imports = with inputs; [
+          nix-topology.nixosModules.default
 
-      bindMounts."/var/log/traefik" = {
-        hostPath = "/var/log/traefik";
-        isReadOnly = false;
-      };
+          systemd-vaultd.nixosModules.vaultAgent
+          systemd-vaultd.nixosModules.systemdVaultd
 
-      config = {
-        imports = [ inputs.nix-topology.nixosModules.default ];
+          "${inputs.self}/modules/nixos/services/security/vault/options.nix"
+          "${inputs.self}/modules/nixos/services/security/vault/client.nix"
+        ];
+
         system.stateVersion = "26.05";
 
         systemd.tmpfiles.rules = [
@@ -129,20 +164,33 @@ in
           "f /var/log/traefik/traefik.log 0644 traefik traefik -"
         ];
 
-        systemd.services.traefik.serviceConfig = {
-          EnvironmentFile = config.sops.templates."traefik-env".path;
-          LimitNPROC = lib.mkForce 4096;
-          LimitNPROCSoft = lib.mkForce 4096;
+        modules.nixos.services.security.vault.client = {
+          enable = true;
+          traefik = false;
+
+          services.traefik.environmentTemplate = ''
+            {{ with secret "kv/data/traefik" }}
+            CF_DNS_API_TOKEN={{ .Data.data.cloudflare_dns_api_token }}
+            {{ end }}
+          '';
         };
 
-        networking.firewall.allowedTCPPorts = [ 80 443 ];
+        networking.firewall.allowedTCPPorts = [
+          80
+          443
+        ];
 
         services.traefik = {
           enable = true;
 
           staticConfigOptions = {
-            log = { level = "DEBUG"; };
-            accessLog = { bufferingSize = 0; fields.defaultMode = "keep"; };
+            log = {
+              level = "DEBUG";
+            };
+            accessLog = {
+              bufferingSize = 0;
+              fields.defaultMode = "keep";
+            };
 
             entryPoints.web.address = ":80";
             entryPoints.websecure.address = ":443";
@@ -161,6 +209,18 @@ in
               };
             };
 
+            http.serversTransports = {
+              node-transport = {
+                rootCAs = [ "/etc/ssl/certs/node-ca.crt" ];
+                certificates = [
+                  {
+                    certFile = "/etc/ssl/certs/node-client.crt";
+                    keyFile = "/etc/ssl/private/node-client.key";
+                  }
+                ];
+              };
+            };
+
             tracing = {
               serviceName = "traefik-internal";
               otlp.grpc = {
@@ -173,11 +233,11 @@ in
           dynamicConfigOptions.http = {
             middlewares.forward-auth-headers.headers.customRequestHeaders = {
               "X-Forwarded-Proto" = "https";
-              "X-Forwarded-Port"  = "443";
+              "X-Forwarded-Port" = "443";
             };
 
-            services = lib.mkMerge (lib.mapAttrsToList (mkService "internal") enabledInternal);
-            routers  = lib.mkMerge (lib.mapAttrsToList (mkRouter  "internal") enabledInternal);
+            services = lib.mkMerge (map mkHttpService enabledInternal);
+            routers = lib.mkMerge (map (mkHttpRouter "internal") enabledInternal);
           };
         };
       };
@@ -193,26 +253,45 @@ in
       privateNetwork = true;
       hostBridge = net.zones.dmz.bridge;
 
-      bindMounts.${cfg.acme.storage} = {
-        hostPath = cfg.acme.storage;
-        isReadOnly = false;
+      bindMounts = {
+        ${cfg.acme.storage} = {
+          hostPath = cfg.acme.storage;
+          isReadOnly = false;
+        };
+        "/var/log/traefik" = {
+          hostPath = "/var/log/traefik";
+          isReadOnly = false;
+        };
+        "/etc/ssl/certs/node-ca.crt" = {
+          hostPath = "/etc/ssl/node-ca.crt";
+          isReadOnly = true;
+        };
+        "/etc/ssl/certs/node-client.crt" = {
+          hostPath = "/etc/ssl/node-client.crt";
+          isReadOnly = true;
+        };
+        "/etc/ssl/private/node-client.key" = {
+          hostPath = "/etc/ssl/node-client.key";
+          isReadOnly = true;
+        };
       };
 
-      bindMounts.${config.sops.templates."traefik-env".path} = {
-        hostPath = config.sops.templates."traefik-env".path;
-        isReadOnly = true;
-      };
+      config = { ... }: {
+        imports = with inputs; [
+          nix-topology.nixosModules.default
 
-      bindMounts."/var/log/traefik" = {
-        hostPath = "/var/log/traefik";
-        isReadOnly = false;
-      };
+          systemd-vaultd.nixosModules.vaultAgent
+          systemd-vaultd.nixosModules.systemdVaultd
 
-      config = {
-        imports = [ inputs.nix-topology.nixosModules.default ];
+          "${inputs.self}/modules/nixos/services/security/vault/options.nix"
+          "${inputs.self}/modules/nixos/services/security/vault/client.nix"
+        ];
         system.stateVersion = "26.05";
 
-        networking.firewall.allowedTCPPorts = [ 80 443 ];
+        networking.firewall.allowedTCPPorts = [
+          80
+          443
+        ];
 
         systemd.tmpfiles.rules = [
           "d /var/acme 0755 traefik traefik -"
@@ -222,18 +301,28 @@ in
           "f /var/log/traefik/traefik.log 0644 traefik traefik -"
         ];
 
-        systemd.services.traefik.serviceConfig = {
-          EnvironmentFile = config.sops.templates."traefik-env".path;
-          LimitNPROC = lib.mkForce 4096;
-          LimitNPROCSoft = lib.mkForce 4096;
+        modules.nixos.services.security.vault.client = {
+          enable = true;
+          traefik = false;
+
+          services.traefik.environmentTemplate = ''
+            {{ with secret "kv/data/traefik" }}
+            CF_DNS_API_TOKEN={{ .Data.data.cloudflare_dns_api_token }}
+            {{ end }}
+          '';
         };
 
         services.traefik = {
           enable = true;
 
           staticConfigOptions = {
-            log = { level = "DEBUG"; };
-            accessLog = { bufferingSize = 0; fields.defaultMode = "keep"; };
+            log = {
+              level = "DEBUG";
+            };
+            accessLog = {
+              bufferingSize = 0;
+              fields.defaultMode = "keep";
+            };
 
             entryPoints.web.address = ":80";
             entryPoints.websecure.address = ":443";
@@ -252,6 +341,18 @@ in
               };
             };
 
+            http.serversTransports = {
+              node-transport = {
+                rootCAs = [ "/etc/ssl/certs/node-ca.crt" ];
+                certificates = [
+                  {
+                    certFile = "/etc/ssl/certs/node-client.crt";
+                    keyFile = "/etc/ssl/private/node-client.key";
+                  }
+                ];
+              };
+            };
+
             tracing = {
               serviceName = "traefik-dmz";
               otlp.grpc = {
@@ -264,11 +365,11 @@ in
           dynamicConfigOptions.http = {
             middlewares.forward-auth-headers.headers.customRequestHeaders = {
               "X-Forwarded-Proto" = "https";
-              "X-Forwarded-Port"  = "443";
+              "X-Forwarded-Port" = "443";
             };
 
-            services = lib.mkMerge (lib.mapAttrsToList (mkService "dmz") enabledDmz);
-            routers  = lib.mkMerge (lib.mapAttrsToList (mkRouter  "dmz") enabledDmz);
+            services = lib.mkMerge (map mkHttpService enabledDmz);
+            routers = lib.mkMerge (map (mkHttpRouter "dmz") enabledDmz);
           };
         };
       };

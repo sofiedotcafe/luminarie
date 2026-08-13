@@ -10,252 +10,29 @@ let
   sec = config.modules.nixos.services.security;
   cfg = sec.vault;
 
-  terranix = inputs.terranix.lib;
-
   domains = rec {
     root = config.modules.nixos.services.traefik.internalDomain;
-    subdomain = cfg.subdomain + "." + root;
+    subdomain = "${cfg.subdomain}.${root}";
   };
-
-  mkDevicePki = {
-    terraform.required_providers.vault = {
-      source = "hashicorp/vault";
-      version = ">= 3.0.0";
-    };
-
-    provider.vault = {
-      address = "https://${domains.subdomain}";
-      ca_cert_file = "/var/lib/vault/tls/ca.crt";
-
-      token = ''$\{file ("/run/vault/device-token")}'';
-    };
-
-    resource = {
-      vault_mount.pki_devices = {
-        path = "pki/devices";
-        type = "pki";
-        description = "PKI for TPM-bound device certificates";
-        max_lease_ttl_seconds = 31536000;
-      };
-
-      vault_pki_secret_backend_root_cert.pki_devices_root = {
-        backend = "pki/devices";
-        type = "internal";
-        common_name = "devices-ca";
-        ttl = "87600h";
-      };
-
-      vault_pki_secret_backend_role.pki_devices_node_role = {
-        backend = "pki/devices";
-        name = "node";
-        allowed_organizational_units = [ "TPM-BOUND" ];
-        key_type = "rsa";
-        key_bits = 2048;
-        max_ttl = "8760h";
-
-        allow_any_name = true;
-        require_cn = false;
-        require_sans = true;
-
-        allowed_other_sans = [
-          "1.3.6.1.4.1.311.25.1:*" # serial
-          "1.3.6.1.4.1.311.25.2:*" # uuid
-        ];
-      };
-
-      vault_auth_backend.cert = {
-        type = "cert";
-        path = "cert";
-      };
-
-      vault_cert_auth_backend_role.devices = {
-        name = "devices";
-        backend = "cert";
-        certificate = "\${vault_pki_secret_backend_root_cert.pki_devices_root.certificate}";
-        allowed_organizational_units = [ "TPM-BOUND" ];
-        token_policies = [ "device-bootstrap" ];
-        token_ttl = "1h";
-        token_max_ttl = "24h";
-      };
-
-      vault_pki_secret_backend_config_urls.devices = {
-        backend = "pki";
-        issuing_certificates = [ "http://${domains.subdomain}:8200/v1/pki/ca" ];
-        crl_distribution_points = [ "http://${domains.subdomain}:8200/v1/pki/crl" ];
-        ocsp_servers = [ "http://${domains.subdomain}:8200/v1/pki/ocsp" ];
-      };
-
-      vault_generic_endpoint.pcr_baseline = {
-        path = "sys/policies/acl/pcr-attestation";
-        data = {
-          policy = ''
-            path "pki/devices/issue/node" {
-              capabilities = ["create", "update"]
-              allowed_parameters = {
-                "pcrs" = {
-                  "sha256:0"  = "7CBAAAA7B0E1B04FFF5F58B01836CF8728CBC2B68597E1059319B07EC38704B8"
-                  "sha256:1"  = "3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
-                  "sha256:2"  = "3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
-                  "sha256:3"  = "3D458CFE55CC03EA1F443F1562BEEC8DF51C75E14A9FCF9A7234A13F198E7969"
-                  "sha256:4"  = "0865AB2031D364366F4EE8DBDBD47E9B8646D7567CE5C8567855658A26AEB336"
-                  "sha256:5"  = "69F35728CD149CD235919789C636E3E2B8FDA4DFCA357531B33BECBFB7D8D3E8"
-                  "sha256:7"  = "E0B8031726E68EDE1CFF65DA92479815C17D598CC7A800F7B0C2B9B152E4986E"
-                }
-              }
-            }
-          '';
-        };
-      };
-
-      vault_policy.device_bootstrap = {
-        name = "device-bootstrap";
-        policy = ''
-          path "secret/data/bootstrap/approles/*" {
-            capabilities = ["read"]
-          }
-        '';
-      };
-
-      vault_auth_backend.approle = {
-        type = "approle";
-        path = "approle";
-      };
-    };
-  };
-
-  mkAppModule =
-    appName: appCfg:
-    let
-      v = appCfg.vault or { };
-      policies = appCfg.policy or { };
-
-      mkPolicies = lib.mapAttrs (name: text: {
-        resource.vault_policy.${name} = {
-          name = name;
-          policy = text;
-        };
-      }) policies;
-
-      mkKv =
-        kvTree:
-        lib.concatMapAttrs (
-          ns: nsCfg:
-          lib.mapAttrs (name: data: {
-            resource.vault_kv_secret_v2."kv_${ns}_${name}" = {
-              mount = "secret";
-              name = "data/${ns}/${name}";
-              data_json = builtins.toJSON data;
-            };
-          }) nsCfg
-        ) kvTree;
-
-      mkTransit =
-        transit:
-        lib.mapAttrs (name: tcfg: {
-          resource.vault_transit_secret_backend_key."transit_${name}" = {
-            backend = "transit";
-            name = name;
-            type = tcfg.type or "rsa-2048";
-          };
-        }) transit;
-
-      mkAppRole =
-        aCfg:
-        let
-          roleName = "app-${appName}";
-        in
-        {
-          resource.vault_approle_auth_backend_role.${roleName} = {
-            backend = "approle";
-            role_name = roleName;
-            token_policies = aCfg.policies or [ ];
-            token_ttl = "1h";
-            token_max_ttl = "24h";
-          };
-
-          resource.vault_approle_auth_backend_role_secret_id.${roleName} = {
-            backend = "approle";
-            role_name = roleName;
-          };
-
-          resource.vault_kv_secret_v2."bootstrap_${roleName}" = lib.optionalAttrs (aCfg.bootstrap or false) {
-            mount = "secret";
-            name = "bootstrap/approles/${appName}";
-            data_json = ''
-              {
-                "role_id": "${"\${vault_approle_auth_backend_role.${roleName}.role_id}"}",
-                "secret_id": "${"\${vault_approle_auth_backend_role_secret_id.${roleName}.secret_id}"}"
-              }
-            '';
-          };
-        };
-    in
-    {
-      resource = lib.foldl' lib.recursiveUpdate { } (
-        (lib.attrValues (mkPolicies))
-        ++ (lib.attrValues (mkKv (v.kv or { })))
-        ++ (lib.attrValues (mkTransit (v.transit or { })))
-        ++ (lib.attrValues (mkAppRole (v.approle or { })))
-      );
-    };
-
-  appModules = lib.mapAttrs mkAppModule cfg.provision;
-
-  terraform = (
-    builtins.toFile "terraform" (
-      builtins.toJSON (
-        terranix.evalTerranixConfiguration {
-          system = pkgs.stdenv.hostPlatform.system;
-          modules = [
-            mkDevicePki
-          ]
-          ++ (lib.attrValues appModules);
-        }
-      )
-    )
-  );
 
   openbao = pkgs.symlinkJoin {
     name = "openbao";
     paths = [
       (pkgs.writeShellScriptBin "bao" ''
-        export VAULT_HSM_PIN=$(cat "$CREDENTIALS_DIRECTORY/vault-pin.cred")
+        [ -f "''${CREDENTIALS_DIRECTORY:-}/vault-pin.cred" ] && export VAULT_HSM_PIN=$(< "''${CREDENTIALS_DIRECTORY}/vault-pin.cred")
         exec ${pkgs.openbao}/bin/bao "$@"
       '')
     ];
-    postBuild = ''
-      ln -s $out/bin/bao $out/bin/vault
-    '';
-
+    postBuild = "ln -s $out/bin/bao $out/bin/vault";
     inherit (pkgs.openbao) version meta;
   };
 in
 {
-  options.modules.nixos.services.security.vault = {
-    enable = lib.mkEnableOption "Vault server";
-
-    address = lib.mkOption {
-      type = lib.types.str;
-      readOnly = true;
-      default = config.modules.nixos.networking.containerInterfaces.vault.address;
-    };
-
-    port = lib.mkOption {
-      type = lib.types.int;
-      default = 8200;
-    };
-
-    subdomain = lib.mkOption {
-      type = lib.types.str;
-      default = "collar";
-    };
-
-    provision = lib.mkOption {
-      type = lib.types.attrsOf lib.types.attrs;
-      default = { };
-      description = "Per-application Vault provisioning (policies, KV, transit, AppRoles, bootstrap).";
-    };
-  };
+  imports = [
+    ./client.nix
+    ./provision.nix
+    ./options.nix
+  ];
 
   config = lib.mkIf cfg.enable {
     modules.nixos.networking.containerInterfaces.vault = {
@@ -263,17 +40,18 @@ in
       id = 20;
       proxy = {
         enable = true;
-        port = cfg.port;
-        subdomain = cfg.subdomain;
+        inherit (cfg) port subdomain;
+        protocol = "https";
         tls = true;
       };
     };
 
     security.tpm2.enable = true;
+    security.tpm2.pkcs11.enable = true;
+    security.tpm2.tctiEnvironment.enable = true;
 
     containers.vault = {
       autoStart = true;
-
       forwardPorts = [
         {
           containerPort = cfg.port;
@@ -281,7 +59,6 @@ in
           protocol = "tcp";
         }
       ];
-
       allowedDevices = [
         {
           node = "/dev/tpmrm0";
@@ -292,16 +69,21 @@ in
           modifier = "rwm";
         }
       ];
-
-      bindMounts."/dev/tpmrm0" = {
-        hostPath = "/dev/tpmrm0";
-        isReadOnly = false;
-      };
-
-      bindMounts."/dev/tpm0" = {
-        hostPath = "/dev/tpm0";
-        isReadOnly = false;
-      };
+      bindMounts = lib.listToAttrs (
+        map
+          (
+            dev:
+            lib.nameValuePair dev {
+              hostPath = dev;
+              isReadOnly = false;
+            }
+          )
+          [
+            "/dev/tpmrm0"
+            "/dev/tpm0"
+            "/etc/ssl"
+          ]
+      );
 
       config = {
         imports = with inputs; [
@@ -311,63 +93,83 @@ in
         ];
 
         system.stateVersion = "26.05";
-
-        security.tpm2.enable = true;
-        security.tpm2.pkcs11.enable = true;
-        security.tpm2.tctiEnvironment.enable = true;
+        security.tpm2 = {
+          enable = true;
+          pkcs11.enable = true;
+          tctiEnvironment.enable = true;
+        };
 
         systemd.services.vault-hsm-bootstrap = {
           description = "Initialize Vault's HSM cryptographic material using TPM-backed secrets and PKCS#11";
           wantedBy = [ "multi-user.target" ];
           before = [ "vault.service" ];
-
           unitConfig.ConditionPathExists = "!/var/lib/vault/vault-pin.cred";
+
+          path = with pkgs; [
+            tpm2-tools
+            tpm2-pkcs11
+            openssl
+            systemd
+            coreutils
+          ];
+          serviceConfig = {
+            User = "root";
+            Group = "root";
+            DeviceAllow = [
+              "/dev/tpm0 rw"
+              "/dev/tpmrm0 rw"
+            ];
+            PrivateDevices = lib.mkForce false;
+          };
 
           script = ''
             set -euo pipefail
+
+            TPM2TOOLS_TCTI=device:/dev/tpm0
+
             umask 077
+            mkdir -pm755 /etc/ssl
+            mkdir -pm700 /var/lib/vault/{ssl,pkcs11}
 
-            mkdir -pm700 /var/lib/vault
-            mkdir -pm700 /var/lib/vault/tls
-            mkdir -pm700 /var/lib/vault/pkcs11
-
+            # 1. Generate Root CA inside private vault SSL directory
             openssl req -x509 -newkey rsa:3072 -nodes \
-              -keyout /var/lib/vault/tls/ca.key \
-              -out /var/lib/vault/tls/ca.crt \
-              -subj "/CN=Vault-Local-CA" \
-              -days 3650
+              -keyout /var/lib/vault/ssl/ca.key -out /var/lib/vault/ssl/ca.crt \
+              -subj "/CN=Vault-Local-CA" -days 3650
 
+            # 2. Generate Strict Server Certificate inside private vault SSL directory
             openssl req -new -newkey rsa:3072 -nodes \
-              -keyout /var/lib/vault/tls/server.key \
-              -out /var/lib/vault/tls/server.csr \
-              -subj "/CN=${domains.subdomain}" \
-              -addext "subjectAltName=DNS:${domains.subdomain}"
+              -keyout /var/lib/vault/ssl/server.key -out /var/lib/vault/ssl/server.csr \
+              -subj "/CN=${domains.subdomain}/OU=Vault-Server" \
+              -addext "subjectAltName=DNS:${domains.subdomain},DNS:localhost,IP:127.0.0.1"
 
-            openssl x509 -req \
-              -in /var/lib/vault/tls/server.csr \
-              -CA /var/lib/vault/tls/ca.crt \
-              -CAkey /var/lib/vault/tls/ca.key \
-              -CAcreateserial \
-              -out /var/lib/vault/tls/server.crt \
-              -days 825 \
-              -extfile <(printf "subjectAltName=DNS:${domains.subdomain}\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth")
+            openssl x509 -req -in /var/lib/vault/ssl/server.csr \
+              -CA /var/lib/vault/ssl/ca.crt -CAkey /var/lib/vault/ssl/ca.key -CAcreateserial \
+              -out /var/lib/vault/ssl/server.crt -days 825 \
+              -extfile <(printf "subjectAltName=DNS:${domains.subdomain},DNS:localhost,IP:127.0.0.1\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth")
 
-            chmod 600 /var/lib/vault/tls/server.key /var/lib/vault/tls/ca.key
-            chmod 644 /var/lib/vault/tls/server.crt /var/lib/vault/tls/ca.crt
-            chown -R vault:vault /var/lib/vault/tls/*
+            # 3. Generate Strict Client Certificate for shared consumption into /etc/ssl
+            openssl req -new -newkey rsa:3072 -nodes \
+              -keyout /etc/ssl/node-client.key -out /etc/ssl/node-client.csr \
+              -subj "/CN=traefik-client/OU=Internal-Services"
+
+            openssl x509 -req -in /etc/ssl/node-client.csr \
+              -CA /var/lib/vault/ssl/ca.crt -CAkey /var/lib/vault/ssl/ca.key -CAcreateserial \
+              -out /etc/ssl/node-client.crt -days 825 \
+              -extfile <(printf "keyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=clientAuth")
+
+            # Copy public Root CA to shared directory for trust chains
+            cp /var/lib/vault/ssl/ca.crt /etc/ssl/node-ca.crt
+
+            rm -f /var/lib/vault/ssl/*.csr /etc/ssl/*.csr
+
+            chmod 600 /var/lib/vault/ssl/*.key /etc/ssl/*.key
+            chmod 644 /var/lib/vault/ssl/*.crt /etc/ssl/*.crt
+            chown -R vault:vault /var/lib/vault/ssl /etc/ssl
 
             PIN="$(tpm2_getrandom 32 | base64 -w0)"
             printf '%s' "$PIN" > /var/lib/vault/vault-pin.raw
-
-            systemd-creds encrypt \
-              --name=vault-pin.cred \
-              --tpm2-device=/dev/tpmrm0 \
-              --tpm2-pcrs=0+1+2+3+4+5+7 \
-              /var/lib/vault/vault-pin.raw \
-              /var/lib/vault/vault-pin.cred
-
+            systemd-creds encrypt --name=vault-pin.cred --tpm2-device=/dev/tpmrm0 --tpm2-pcrs=0+1+2+3+4+5+7 /var/lib/vault/vault-pin.raw /var/lib/vault/vault-pin.cred
             rm /var/lib/vault/vault-pin.raw
-            chmod 600 /var/lib/vault/vault-pin.cred
             chown vault:vault /var/lib/vault/vault-pin.cred
 
             tpm2_ptool init --path /var/lib/vault/pkcs11
@@ -376,62 +178,94 @@ in
             SOPIN="$(tpm2_getrandom 16 | base64 -w0)"
             USERPIN="$(systemd-creds decrypt /var/lib/vault/vault-pin.cred)"
 
-            tpm2_ptool addtoken \
-              --pid 1 \
-              --label vault \
-              --sopin "$SOPIN" \
-              --userpin "$USERPIN" \
-              --path /var/lib/vault/pkcs11
-
-            tpm2_ptool addkey \
-              --algorithm rsa2048 \
-              --label vault \
-              --key-label vault-key \
-              --userpin "$USERPIN" \
-              --path /var/lib/vault/pkcs11
-
-            tpm2_ptool addkey \
-              --algorithm hmac:sha256 \
-              --label vault \
-              --key-label vault-hmac \
-              --userpin "$USERPIN" \
-              --path /var/lib/vault/pkcs11
+            tpm2_ptool addtoken --pid 1 --label vault --sopin "$SOPIN" --userpin "$USERPIN" --path /var/lib/vault/pkcs11
+            tpm2_ptool addkey --algorithm rsa2048 --label vault --key-label vault-key --userpin "$USERPIN" --path /var/lib/vault/pkcs11
+            tpm2_ptool addkey --algorithm hmac:sha256 --label vault --key-label vault-hmac --userpin "$USERPIN" --path /var/lib/vault/pkcs11
           '';
+        };
 
-          serviceConfig = {
-            User = "root";
-            Group = "root";
+        systemd.services.vault-operator-init = {
+          description = "Initialize Vault operator once health check passes";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "vault.service" ];
+          requires = [ "vault.service" ];
+          unitConfig.ConditionPathExists = "!/var/lib/vault/init.json";
 
-            DeviceAllow = [
-              "/dev/tpm0 rw"
-              "/dev/tpmrm0 rw"
-            ];
-            PrivateDevices = lib.mkForce false;
+          path = with pkgs; [
+            curl
+            jq
+            coreutils
+            openbao
+            busybox
+          ];
+
+          environment = {
+            VAULT_ADDR = "https://127.0.0.1:${toString cfg.port}";
+            VAULT_CACERT = "/etc/ssl/node-ca.crt";
+            VAULT_CLIENT_CERT = "/etc/ssl/node-client.crt";
+            VAULT_CLIENT_KEY = "/etc/ssl/node-client.key";
           };
 
-          path = [
-            pkgs.tpm2-tools
-            pkgs.tpm2-pkcs11
-            pkgs.openssl
-            pkgs.systemd
-            pkgs.coreutils
-          ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+
+          script = ''
+            set -euo pipefail
+
+            until curl --silent --cacert "$VAULT_CACERT" --cert "$VAULT_CLIENT_CERT" --key "$VAULT_CLIENT_KEY" "$VAULT_ADDR/v1/sys/health" >/dev/null 2>&1; do 
+              sleep 2
+            done
+
+            HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" --cacert "$VAULT_CACERT" --cert "$VAULT_CLIENT_CERT" --key "$VAULT_CLIENT_KEY" "$VAULT_ADDR/v1/sys/health")
+
+            # 501 means the server is running but uninitialized
+            if [ "$HTTP_CODE" -eq 501 ]; then
+              echo "Vault is uninitialized (501). Initializing..."
+              umask 077
+              vault operator init -format=json > /var/lib/vault/init.json
+              chmod 600 /var/lib/vault/init.json
+            fi
+          '';
+        };
+
+        system.activationScripts.vault = {
+          supportsDryActivation = true;
+          text = ''
+            INIT_FILE="/var/lib/vault/init.json"
+
+            if [ -f "$INIT_FILE" ]; then
+              ROOT_TOKEN=$(${pkgs.jq}/bin/jq -r '.root_token // "N/A"' "$INIT_FILE")
+              UNSEAL_KEY_1=$(${pkgs.jq}/bin/jq -r '.unseal_keys_b64[0] // "N/A"' "$INIT_FILE")
+
+              ${pkgs.gum}/bin/gum style \
+                --foreground 196 \
+                --border-foreground 196 \
+                --border rounded \
+                --padding "0 1" \
+                "Vault Emergency Credentials" \
+                "Root Token:    $ROOT_TOKEN" \
+                "Unseal Key 1: $UNSEAL_KEY_1" \
+                "" \
+                "⚠️ Store these out-of-band securely! You can't access them after this!"
+
+              rm -f "$INIT_FILE"
+            fi
+          '';
         };
 
         systemd.services.vault = {
           after = [ "vault-hsm-bootstrap.service" ];
           requires = [ "vault-hsm-bootstrap.service" ];
-
           serviceConfig = {
             LoadCredentialEncrypted = "vault-pin.cred:/var/lib/vault/vault-pin.cred";
-
             DeviceAllow = [
               "/dev/tpm0 rw"
               "/dev/tpmrm0 rw"
             ];
             PrivateDevices = lib.mkForce false;
           };
-
           environment = {
             VAULT_SEAL_TYPE = "pkcs11";
             VAULT_HSM_LIB = "${
@@ -447,103 +281,30 @@ in
           };
         };
 
-        users.groups.tss = {
-          members = [ "vault" ];
-        };
+        users.groups.tss.members = [ "vault" ];
 
         services.vault = {
           enable = true;
           package = openbao;
-
           dev = false;
-
           address = "0.0.0.0:${toString cfg.port}";
-          tlsCertFile = "/var/lib/vault/tls/server.crt";
-          tlsKeyFile = "/var/lib/vault/tls/server.key";
-
+          tlsCertFile = "/var/lib/vault/ssl/server.crt";
+          tlsKeyFile = "/var/lib/vault/ssl/server.key";
+          storageBackend = "raft";
+          storagePath = "/var/lib/vault";
+          storageConfig = "node_id = \"vault-node-1\"";
           listenerExtraConfig = ''
             cluster_address = "0.0.0.0:8201"
-
             tls_disable = 0
-            tls_client_ca_file = "/var/lib/vault/tls/ca.crt"
+            tls_client_ca_file = "/etc/ssl/node-ca.crt"
             tls_require_and_verify_client_cert = "true"
             tls_min_version = "tls12"
           '';
-
-          storageBackend = "raft";
-          storagePath = "/var/lib/vault";
-          storageConfig = ''
-            node_id = "vault-node-1"
-          '';
-
           extraConfig = ''
-            api_addr      = "https://${domains.subdomain}:8200"
-            cluster_addr  = "https://${domains.subdomain}:8201"
-
+            api_addr = "https://${domains.subdomain}:8200"
+            cluster_addr = "https://${domains.subdomain}:8201"
             ui = true
           '';
-        };
-
-        systemd.services.vault-terraform-apply = {
-          description = "Apply Vault Terraform provisioning";
-          after = [ "vault.service" ];
-          wants = [ "vault.service" ];
-
-          serviceConfig = {
-            Type = "oneshot";
-
-            StateDirectory = "vault/terraform";
-            WorkingDirectory = "/var/lib/vault/terraform";
-
-            ExecStart = ''
-              mkdir -p state configs              
-              cp -u ${terraform} /var/lib/vault/terraform/configs/
-
-              export VAULT_ADDR="https://${domains.subdomain}"
-              export VAULT_CACERT="/var/lib/vault/tls/ca.crt"
-              export VAULT_TOKEN="$(cat /run/vault/device-token)"
-
-              tofu -chdir=configs \
-                init -input=false -backend-config="path=../state/terraform.tfstate"
-
-              tofu -chdir=configs \
-                apply -auto-approve
-            '';
-          };
-
-          path = with pkgs; [
-            pkgs.coreutils
-            pkgs.opentofu
-          ];
-
-          wantedBy = [ "multi-user.target" ];
-        };
-
-        services.vault-agent = {
-          instances.device = {
-            package = openbao;
-            settings = {
-              vault.address = "https://${domains.subdomain}";
-
-              auto_auth.method = [
-                {
-                  type = "cert";
-                  config = {
-                    cert_file = "/etc/ssl/node.crt";
-                    key_file = "/etc/ssl/node.key";
-                    ca_cert_file = "/etc/ssl/ca.crt";
-                  };
-                }
-              ];
-
-              auto_auth.sink = [
-                {
-                  type = "file";
-                  config.path = "/run/vault/device-token";
-                }
-              ];
-            };
-          };
         };
       };
     };

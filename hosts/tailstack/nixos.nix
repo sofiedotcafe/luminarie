@@ -1,15 +1,13 @@
 {
   config,
-  inputs,
   pkgs,
-  lib,
   ...
 }:
 
 {
   topology.self =
     let
-      inherit (config.lib.topology) mkSwitch mkConnection;
+      inherit (config.lib.topology) mkSwitch;
       mkNixos = name: args: mkSwitch name (args // { deviceType = "nixos"; });
     in
     mkNixos "Tailstack" {
@@ -50,25 +48,6 @@
     };
   };
 
-  sops = {
-    defaultSopsFile = "${inputs.self}/secrets/tailstack.yaml";
-
-    secrets."users/root/password_hash" = { };
-    secrets."users/root/password_hash".neededForUsers = true;
-
-    secrets."traefik/cloudflare_acme_token" = { };
-
-    secrets."grafana/secret_key" = { };
-    secrets."grafana/client_secret" = { };
-
-    secrets."authentik/secret_key" = { };
-    secrets."authentik/smtp_key" = { };
-
-    secrets."headscale/client_secret" = { };
-    secrets."headscale/secret_key" = { };
-  };
-
-  users.users.root.hashedPasswordFile = config.sops.secrets."users/root/password_hash".path;
   services.userborn.enable = true;
 
   virtualisation.containers.enable = true;
@@ -93,7 +72,23 @@
     };
 
     services = {
-      authentik = {
+      security.vault.enable = true;
+
+      security.vault.provision.root-db = {
+        policy.root-db-policy = ''
+          path "secret/data/root-db/*" { capabilities = ["read"] }
+        '';
+        vault.kv.root-db.credentials = {
+          db_pass = "root-db-secure-password";
+        };
+
+        vault.approle = {
+          policies = [ "root-db-policy" ];
+          bootstrap = true;
+        };
+      };
+
+      security.authentik = {
         enable = true;
         email = {
           host = "smtp.protonmail.ch";
@@ -102,15 +97,14 @@
         };
       };
 
+      security.tailscale.enable = true;
+
       traefik = {
         enable = true;
         internalDomain = "cage.sofie.cafe";
         externalDomain = "sofie.cafe";
         acme.email = "sofie.halenius@sofie.cafe";
       };
-
-      tailscale.enable = true;
-      fail2ban.enable = true;
 
       observability = {
         grafana.enable = true;
@@ -133,6 +127,7 @@
       };
     };
   };
+
   services.journald.extraConfig = "Storage=persistent SystemMaxUse=200M ";
 
   boot.kernelParams = [

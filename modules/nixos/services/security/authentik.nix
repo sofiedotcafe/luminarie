@@ -46,28 +46,38 @@ in
       default = { };
       description = "Minimal SMTP configuration for Authentik";
     };
-    networking.firewall.allowedTCPPorts = [ cfg.port ];
   };
 
   config = lib.mkIf cfg.enable {
-    system.stateVersion = "26.05";
-
     modules.nixos.networking.containerInterfaces.authentik = {
       zone = "cnt-dmz";
       id = 10;
-      proxy.port = cfg.port;
 
       proxy = {
         enable = true;
+        port = cfg.port;
         subdomain = "noseprint";
         tls = true;
       };
     };
 
-    sops.templates."authentik-env".content = ''
-      AUTHENTIK_SECRET_KEY="${config.sops.placeholder."authentik/secret_key"}"
-      AUTHENTIK_EMAIL__PASSWORD="${config.sops.placeholder."authentik/smtp_key"}"
-    '';
+    # Use client module abstraction for Vault Agent + systemd-vaultd setup
+    modules.nixos.services.security.vault.client = {
+      enable = true;
+      traefik = false;
+
+      services.authentik = {
+        environmentTemplate = ''
+          {{ with secret "secret/data/authentik/bootstrap" }}
+          AUTHENTIK_SECRET_KEY={{ .Data.data.secret_key }}
+          AUTHENTIK_BOOTSTRAP_TOKEN={{ .Data.data.bootstrap_token }}
+          {{ end }}
+          {{ with secret "kv/data/authentik" }}
+          AUTHENTIK_EMAIL__PASSWORD={{ .Data.data.smtp_key }}
+          {{ end }}
+        '';
+      };
+    };
 
     containers.authentik = {
       autoStart = true;
@@ -80,25 +90,20 @@ in
         }
       ];
 
-      # Mount the environment file
-      bindMounts."${config.sops.templates."authentik-env".path}" = {
-        hostPath = config.sops.templates."authentik-env".path;
-        isReadOnly = true;
-      };
-
-      config = {
+      config = { ... }: {
         system.stateVersion = "26.05";
 
-        imports = [
-          inputs.nix-topology.nixosModules.default
-          inputs.authentik-nix.nixosModules.default
+        imports = with inputs; [
+          nix-topology.nixosModules.default
+          systemd-vaultd.nixosModules.vaultAgent
+          systemd-vaultd.nixosModules.systemdVaultd
+          authentik-nix.nixosModules.default
         ];
 
         networking.firewall.allowedTCPPorts = [ cfg.port ];
 
         services.authentik = {
           enable = true;
-          environmentFile = config.sops.templates."authentik-env".path;
           settings = {
             email = {
               inherit (cfg.email)
@@ -113,7 +118,6 @@ in
             disable_startup_analytics = true;
             avatars = "initials";
           };
-
         };
       };
     };

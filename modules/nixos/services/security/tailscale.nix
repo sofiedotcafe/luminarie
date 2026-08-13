@@ -2,6 +2,7 @@
   config,
   lib,
   inputs,
+  pkgs,
   ...
 }:
 
@@ -31,10 +32,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-
     systemd.tmpfiles.rules = [
       "d ${cfg.headscale.dataDir} 0750 root root -"
-      "d ${config.sops.secrets."headscale/secret_key".path} 0750 tailscale tailscale -"
     ];
 
     modules.nixos.networking.containerInterfaces.headscale = {
@@ -48,27 +47,41 @@ in
       };
     };
 
+    modules.nixos.services.security.vault.client = {
+      enable = true;
+      traefik = false;
+
+      services.headscale = {
+        environmentTemplate = ''
+          {{ with secret "kv/data/headscale" }}
+          HEADSCALE_OIDC_CLIENT_SECRET={{ .Data.data.oidc_client_secret }}
+          {{ end }}
+        '';
+      };
+
+      services.tailscale-key-sync = {
+        template = ''
+          {{ with secret "kv/data/headscale/tailscale-key" }}
+          {{ .Data.data | toJSON }}
+          {{ end }}
+        '';
+        secrets.secret_key = { };
+      };
+    };
+
     containers.headscale = {
       autoStart = true;
 
-      bindMounts.${config.sops.secrets."headscale/client_secret".path} = {
-        hostPath = config.sops.secrets."headscale/client_secret".path;
-        isReadOnly = false;
-      };
-
-      bindMounts.${config.sops.secrets."headscale/secret_key".path} = {
-        hostPath = config.sops.secrets."headscale/secret_key".path;
-        isReadOnly = false;
-      };
-
-      config = {
-        imports = [ inputs.nix-topology.nixosModules.default ];
+      config = { ... }: {
+        imports = with inputs; [
+          nix-topology.nixosModules.default
+          systemd-vaultd.nixosModules.vaultAgent
+          systemd-vaultd.nixosModules.systemdVaultd
+        ];
         system.stateVersion = "26.05";
 
         systemd.tmpfiles.rules = [
           "d ${cfg.headscale.dataDir} 0750 headscale headscale -"
-          "f ${config.sops.secrets."headscale/client_secret".path} 0440 root headscale -"
-          "f ${config.sops.secrets."headscale/secret_key".path} 0440 root headscale -"
         ];
 
         networking.firewall.allowedTCPPorts = [ cfg.headscale.port ];
@@ -93,7 +106,7 @@ in
             oidc = {
               issuer = "https://noseprint.sofie.cafe/application/o/headscale/";
               client_id = "HAuAwiKwBqE8VZfIZnptkJ8arghphUTYQFDKs0yn";
-              client_secret_path = "${config.sops.secrets."headscale/client_secret".path}";
+              client_secret_path = "/dev/null";
 
               scope = [
                 "openid"
@@ -109,23 +122,78 @@ in
             };
           };
         };
+
+        systemd.services.headscale-register-vault-key = {
+          description = "Generate Headscale Preauthkey and Push to Vault";
+          wantedBy = [ "multi-user.target" ];
+          after = [ "headscale.service" ];
+          requires = [ "headscale.service" ];
+
+          path = with pkgs; [
+            headscale
+            curl
+            jq
+          ];
+
+          script = ''
+            # Wait for Headscale socket/service to be ready
+            until headscale ping >/dev/null 2>&1; do
+              sleep 2
+            done
+
+            # Generate reusable preauthkey
+            KEY=$(headscale preauthkeys create --user default --reusable --expiration 365d --output json | jq -r '.key')
+
+            # Retrieve local Vault agent token (or AppRole token)
+            VAULT_TOKEN=$(cat /run/vault/token 2>/dev/null || echo "")
+
+            if [ -n "$KEY" ] && [ -n "$VAULT_TOKEN" ]; then
+              curl -s --request POST \
+                --header "X-Vault-Token: $VAULT_TOKEN" \
+                --data "{\"data\": {\"secret_key\": \"$KEY\"}}" \
+                http://127.0.0.1:8200/v1/kv/data/headscale/tailscale-key
+            fi
+          '';
+
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+          };
+        };
+      };
+    };
+
+    systemd.services.tailscale-key-sync = {
+      description = "Fetch Tailscale auth key from Vault for service startup";
+      wantedBy = [ "tailscaled.service" ];
+      before = [ "tailscaled.service" ];
+
+      script = ''
+        mkdir -p /run/tailscale
+        cp "$CREDENTIALS_DIRECTORY/secret_key" /run/tailscale/authkey
+        chmod 600 /run/tailscale/authkey
+      '';
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
       };
     };
 
     services.tailscale = {
       enable = true;
 
-      authKeyFile = "${config.sops.secrets."headscale/secret_key".path}";
+      authKeyFile = "/run/tailscale/authkey";
       openFirewall = true;
 
       extraUpFlags = [
         "--login-server=https://tail.${cfg.headscale.domain}"
         "--accept-dns=false"
-
         "--advertise-exit-node"
         "--advertise-routes=10.0.0.0/28,10.0.1.0/28"
       ];
     };
+
     boot.kernel.sysctl = {
       "net.ipv4.ip_forward" = true;
       "net.ipv6.conf.all.forwarding" = true;

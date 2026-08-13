@@ -52,6 +52,8 @@ in
     };
   };
 
+  imports = [ inputs.nixvim.nixosModules.nixvim ];
+
   config = mkIf cfg.enable {
     programs.nixvim = {
       enable = true;

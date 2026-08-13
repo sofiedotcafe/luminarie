@@ -52,25 +52,14 @@ in
         }
       ];
 
-      # Secrets
-      bindMounts.${config.sops.secrets."grafana/secret_key".path} = {
-        hostPath = config.sops.secrets."grafana/secret_key".path;
-        isReadOnly = false;
-      };
-      bindMounts.${config.sops.secrets."grafana/client_secret".path} = {
-        hostPath = config.sops.secrets."grafana/client_secret".path;
-        isReadOnly = false;
-      };
+      config = { ... }: {
+        imports = with inputs; [
+          nix-topology.nixosModules.default
 
-      config = {
-        imports = [ inputs.nix-topology.nixosModules.default ];
-        system.stateVersion = "26.05";
-
-        systemd.tmpfiles.rules = [
-          "d /run/secrets/grafana 0750 root grafana -"
-          "f /run/secrets/grafana/secret_key 0440 root grafana -"
-          "f /run/secrets/grafana/client_secret 0440 root grafana -"
+          systemd-vaultd.nixosModules.vaultAgent
+          systemd-vaultd.nixosModules.systemdVaultd
         ];
+        system.stateVersion = "26.05";
 
         networking.firewall = {
           enable = true;
@@ -78,6 +67,28 @@ in
         };
 
         environment.etc."grafana/dashboards".source = ./dashboards;
+
+        systemd.services.grafana = {
+          vault = {
+            secrets = {
+              "grafana/secret_key" = {
+                user = "grafana";
+                group = "grafana";
+                path = "/run/vault/grafana_secret_key";
+                template = ''
+                  {{ with secret "kv/data/grafana" }}{{ .Data.data.secret_key }}{{ end }}
+                '';
+              };
+            };
+
+            environmentTemplate = ''
+              {{ with secret "kv/data/grafana" }}
+              GF_AUTH_GENERIC_OAUTH_CLIENT_ID={{ .Data.data.client_id }}
+              GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET={{ .Data.data.client_secret }}
+              {{ end }}
+            '';
+          };
+        };
 
         services.grafana = {
           enable = true;
@@ -109,6 +120,8 @@ in
               http_port = cfg.port;
             };
 
+            security.secret_key = "$__file{/run/vault/grafana_secret_key}";
+
             auth = {
               disable_login_form = true;
               oauth_auto_login = true;
@@ -117,8 +130,6 @@ in
             "auth.generic_oauth" = {
               enabled = true;
               name = "authentik";
-              client_id = "lK1vwONl2oMoIMGYjuEY7GwhaxDOBAcGenvchK9J";
-              client_secret = "$__file{${config.sops.secrets."grafana/client_secret".path}}";
               scopes = "openid profile email";
               auth_url = "https://noseprint.sofie.cafe/application/o/authorize/";
               token_url = "https://noseprint.sofie.cafe/application/o/token/";
@@ -127,8 +138,6 @@ in
               role_attribute_path = "contains(groups[*], 'authentik Admins') && 'Admin' || contains(groups[*], 'authentik Read-only') && 'Viewer' || contains(groups[*], 'authentik Users') && 'Editor'";
               allow_assign_grafana_admin = true;
             };
-
-            security.secret_key = "$__file{${config.sops.secrets."grafana/secret_key".path}}";
 
             users = {
               auto_assign_org = true;

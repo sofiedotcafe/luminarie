@@ -49,7 +49,12 @@ in
       ];
 
       config = {
-        imports = [ inputs.nix-topology.nixosModules.default ];
+        imports = with inputs; [
+          nix-topology.nixosModules.default
+
+          systemd-vaultd.nixosModules.vaultAgent
+          systemd-vaultd.nixosModules.systemdVaultd
+        ];
         system.stateVersion = "26.05";
 
         networking.firewall.allowedTCPPorts = [ cfg.port ];

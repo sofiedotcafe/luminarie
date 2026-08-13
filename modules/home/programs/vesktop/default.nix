@@ -123,15 +123,27 @@ in
         RuntimeDirectory = "mprisence";
         ExecStart = "${pkgs.mprisence}/bin/mprisence";
 
-        ExecStartPre = [
-          (pkgs.writeShellScript "mprisence-init" ''
-            mkdir -p "$HOME/.config/mprisence"
-            cat > "$HOME/.config/mprisence/config.toml" <<'EOF'
-            [player.mozilla_firefox]
-            ignore = false
-            EOF
-          '')
-        ];
+        ExecStartPre =
+          let
+            toml = pkgs.formats.toml { };
+          in
+          [
+            (pkgs.writeShellScript "mprisence-init" ''
+              mkdir -p "$HOME/.config/mprisence"
+              cat > "$HOME/.config/mprisence/config.toml" <<EOF
+              ${builtins.readFile (
+                toml.generate "mprisence-config" {
+                  cover.provider.providers = [
+                    "metadata"
+                    "local"
+                    "musicbrainz"
+                    "catbox"
+                  ];
+                }
+              )}
+              EOF
+            '')
+          ];
       };
 
       Install = {

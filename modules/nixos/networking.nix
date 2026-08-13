@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 
@@ -24,6 +23,28 @@ let
       parts = lib.take 3 (lib.splitString "." network);
     in
     builtins.concatStringsSep "." parts + ".";
+
+  proxyOptions = {
+    options = {
+      enable = mkEnableOption "proxy";
+      port = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+      };
+      subdomain = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+      };
+      protocol = mkOption {
+        type = types.str;
+        default = "http";
+      };
+      tls = mkOption {
+        type = types.bool;
+        default = true;
+      };
+    };
+  };
 
 in
 {
@@ -151,37 +172,16 @@ in
                 readOnly = true;
                 default =
                   let
-                    zoneName = config.zone; # submodule’s own zone
-                    id = config.id; # submodule’s own id
-                    zoneCfg = cfg.zones.${zoneName}; # parent zone definition
+                    zoneName = config.zone;
+                    id = config.id;
+                    zoneCfg = cfg.zones.${zoneName};
                     base = prefixFromNetwork zoneCfg.network;
                   in
                   "${base}${toString id}";
               };
 
               proxy = mkOption {
-                type = types.nullOr (
-                  types.submodule {
-                    options = {
-                      enable = mkOption {
-                        type = types.bool;
-                        default = false;
-                      };
-                      port = mkOption {
-                        type = types.nullOr types.int;
-                        default = null;
-                      };
-                      subdomain = mkOption {
-                        type = types.nullOr types.str;
-                        default = null;
-                      };
-                      tls = mkOption {
-                        type = types.bool;
-                        default = true;
-                      };
-                    };
-                  }
-                );
+                type = types.submodule proxyOptions;
                 default = { };
               };
             };
@@ -191,6 +191,7 @@ in
       default = { };
     };
   };
+
   config = mkIf cfg.enable (
     let
       useBond = cfg.wan.enableLAG;
@@ -304,7 +305,6 @@ in
 
                 oifname "br-svc" masquerade
                 oifname "br-dmz" masquerade
-
                 oifname "br-vpn" masquerade
               }
             '';
@@ -331,21 +331,21 @@ in
       systemd.network.wait-online.enable = false;
       services.resolved.enable = false;
 
-      services.dnscrypt-proxy2 = {
+      services.dnscrypt-proxy = {
         enable = true;
 
         settings = {
-          listen_addresses =
-            [ "127.0.0.1:53" ]
-            ++ map (z: "${z.gateway}:53") (lib.attrValues cfg.zones);
+          listen_addresses = [ "127.0.0.1:53" ] ++ map (z: "${z.gateway}:53") (lib.attrValues cfg.zones);
 
-          server_names = [ "cloudflare" "quad9-dnscrypt-ip4-filter-pri" ];
+          server_names = [
+            "cloudflare"
+            "quad9-dnscrypt-ip4-filter-pri"
+          ];
 
           forwarding_rules = builtins.toFile "forwarding-rules" ''
             lan ${wanZone.gateway}
             local ${wanZone.gateway}
             home.arpa ${wanZone.gateway}
-
             sofie.cafe ${wanZone.gateway}
           '';
 

@@ -1,1 +1,0 @@
-variable "sops_file" {}

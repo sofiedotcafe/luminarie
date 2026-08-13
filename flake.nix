@@ -17,6 +17,7 @@
         ./pkgs
         ./hosts
         ./topology
+        ./tofu
 
         ./devshell
       ];
@@ -45,8 +46,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    sops-nix = {
-      url = "github:Mic92/sops-nix";
+    systemd-vaultd = {
+      url = "github:numtide/systemd-vaultd";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nix-fleet = {
+      url = "github:numtide/nix-fleet";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

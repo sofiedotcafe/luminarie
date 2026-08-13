@@ -34,7 +34,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-
     services.alloy = {
       enable = true;
 
